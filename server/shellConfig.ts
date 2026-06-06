@@ -1,3 +1,5 @@
+import type { NewsTickerItem } from "./newsTicker.js";
+
 export type ShellEnvConfig = {
   headerUserName: string;
   footerTickerItems: string;
@@ -5,17 +7,19 @@ export type ShellEnvConfig = {
 
 export type ShellConfig = {
   userName: string;
-  tickerItems: string[];
+  tickerItems: NewsTickerItem[];
 };
 
 const DEFAULT_USER_NAME = "User";
+const DEFAULT_TICKER_SOURCE = "Update";
 
-export function buildShellConfig(config: ShellEnvConfig): ShellConfig {
+export function buildShellConfig(config: ShellEnvConfig, tickerItems?: NewsTickerItem[]): ShellConfig {
   const userName = config.headerUserName.trim() || DEFAULT_USER_NAME;
-  const tickerItems = config.footerTickerItems
+  const fallbackTickerItems = config.footerTickerItems
     .split("||")
     .map((item) => item.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((title) => ({ source: DEFAULT_TICKER_SOURCE, title, url: "" }));
 
-  return { userName, tickerItems };
+  return { userName, tickerItems: tickerItems ?? fallbackTickerItems };
 }

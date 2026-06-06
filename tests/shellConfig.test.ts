@@ -9,7 +9,11 @@ describe("shell config", () => {
       footerTickerItems: "Alpha|| Beta || ||Gamma"
     })).toEqual({
       userName: "Dayle",
-      tickerItems: ["Alpha", "Beta", "Gamma"]
+      tickerItems: [
+        { source: "Update", title: "Alpha", url: "" },
+        { source: "Update", title: "Beta", url: "" },
+        { source: "Update", title: "Gamma", url: "" }
+      ]
     });
   });
 
@@ -29,7 +33,10 @@ describe("shell config", () => {
       footerTickerItems: "One||Two"
     })).toEqual({
       userName: "Dayle",
-      tickerItems: ["One", "Two"]
+      tickerItems: [
+        { source: "Update", title: "One", url: "" },
+        { source: "Update", title: "Two", url: "" }
+      ]
     });
   });
 });

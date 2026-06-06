@@ -1,9 +1,9 @@
-import type { ConnectionState } from "./types";
+import type { ConnectionState, TickerItem } from "./types";
 
-const EMPTY_TICKER_MESSAGE = "No news updates configured";
+const EMPTY_TICKER_ITEM: TickerItem = { source: "Update", title: "No news updates configured", url: "" };
 
-export function buildTickerTrack(items: string[]) {
-  const source = items.length ? items : [EMPTY_TICKER_MESSAGE];
+export function buildTickerTrack(items: TickerItem[]) {
+  const source = items.length ? items : [EMPTY_TICKER_ITEM];
   return [...source, ...source];
 }
 

@@ -14,20 +14,16 @@ function App() {
   const connection = useConnectionStatus();
 
   return (
-    <main className="dark min-h-svh bg-background px-4 py-4 text-foreground md:px-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="relative overflow-hidden rounded-[2rem]">
-          <div className={shellBackgroundClassName}>
-            <div className={shellBackgroundImageClassName} style={{ backgroundImage: `url(${bgImage})` }} />
-          </div>
-          <div className={shellForegroundClassName}>
-            <ShellHeader userName={userName} timeText={timeText} dateText={dateText} />
-            <div className="flex flex-1 justify-center py-1">
-              <CardGrid cards={cardRegistry} />
-            </div>
-            <ShellFooter tickerItems={tickerItems} connection={connection} />
-          </div>
+    <main className="dark min-h-svh bg-background text-foreground">
+      <div className={shellBackgroundClassName}>
+        <div className={shellBackgroundImageClassName} style={{ backgroundImage: `url(${bgImage})` }} />
+      </div>
+      <div className={shellForegroundClassName}>
+        <ShellHeader userName={userName} timeText={timeText} dateText={dateText} />
+        <div className="flex flex-1 justify-center py-1">
+          <CardGrid cards={cardRegistry} />
         </div>
+        <ShellFooter tickerItems={tickerItems} connection={connection} />
       </div>
     </main>
   );

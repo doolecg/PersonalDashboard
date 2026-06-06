@@ -179,5 +179,5 @@ textarea {
 }
 
 .shell-ticker-track {
-  animation: shell-ticker-scroll 28s linear infinite;
+  animation: shell-ticker-scroll var(--shell-ticker-duration, 48s) linear infinite;
 }
