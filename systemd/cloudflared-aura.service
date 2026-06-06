@@ -1,0 +1,17 @@
+[Unit]
+Description=Cloudflared Tunnel for Aura
+After=network-online.target aura.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cloudflared
+Group=cloudflared
+ExecStart=/usr/bin/cloudflared tunnel --config /home/pi/.cloudflared/aura.yml run aura
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

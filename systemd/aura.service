@@ -1,0 +1,19 @@
+[Unit]
+Description=Aura Dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=aura
+Group=aura
+WorkingDirectory=/opt/aura
+EnvironmentFile=/opt/aura/.env
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
