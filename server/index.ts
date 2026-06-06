@@ -7,6 +7,7 @@ import { env } from "./env.js";
 import { logger } from "./logger.js";
 import { aiRouter } from "./routes/ai.js";
 import { logsRouter } from "./routes/logs.js";
+import { shellRouter } from "./routes/shell.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = env.nodeEnv === "production" ? path.resolve(__dirname, "..") : process.cwd();
@@ -26,6 +27,7 @@ app.get("/api/healthz", (_req, res) => {
   res.json({ ok: true, service: "aura", time: new Date().toISOString() });
 });
 
+app.use("/api/shell", shellRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/log", logsRouter);
 

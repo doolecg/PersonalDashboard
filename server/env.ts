@@ -12,6 +12,9 @@ const numberFromEnv = (key: string, fallback: number) => {
 export const env = {
   port: numberFromEnv("PORT", 8080),
   nodeEnv: process.env.NODE_ENV ?? "development",
+  headerUserName: process.env.HEADER_USER_NAME ?? "",
+  footerTickerItems: process.env.FOOTER_TICKER_ITEMS ?? "",
+  newsRssFeeds: process.env.NEWS_RSS_FEEDS ?? "",
   aiRoutingMode: process.env.AI_ROUTING_MODE ?? "auto",
   aiTimeoutMs: numberFromEnv("AI_TIMEOUT_MS", 30000),
   aiMaxContextChars: numberFromEnv("AI_MAX_CONTEXT_CHARS", 4000),

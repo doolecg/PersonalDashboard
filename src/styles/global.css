@@ -167,3 +167,17 @@ textarea {
     @apply font-sans;
   }
 }
+
+@keyframes shell-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.shell-ticker-track {
+  animation: shell-ticker-scroll var(--shell-ticker-duration, 48s) linear infinite;
+}
