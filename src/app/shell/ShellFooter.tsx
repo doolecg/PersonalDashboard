@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { buildTickerTrack } from "./shellUi";
 import type { ConnectionState, TickerItem } from "./types";
 
-const shellTickerDurationSeconds = 48;
+const shellTickerDurationSeconds = 800;
 
 type ShellFooterProps = {
   tickerItems: TickerItem[];

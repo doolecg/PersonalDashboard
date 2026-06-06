@@ -12,7 +12,7 @@ describe("shell footer", () => {
     );
 
     expect(markup).toContain("shell-ticker-track flex min-w-max items-center gap-24 pr-24");
-    expect(markup).toContain("--shell-ticker-duration:48s");
+    expect(markup).toContain("--shell-ticker-duration:2000s");
     expect(markup).toContain("BBC");
     expect(markup).toContain("Headline");
     expect(markup).toContain("·");
