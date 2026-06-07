@@ -31,7 +31,10 @@ export function TenDayForecastCard({ footprint }: CardComponentProps) {
 
   return (
     <WeatherWidgetFrame className={footprint === "1x1" ? "p-3.5" : footprint === "2x2" ? "p-4 md:p-[1.125rem]" : "p-5 md:p-6"} tone="clear">
-      <WeatherSectionLabel>10-Day Forecast</WeatherSectionLabel>
+      <div className="flex shrink-0 items-start justify-between gap-3">
+        <WeatherSectionLabel>10-Day Forecast</WeatherSectionLabel>
+        <p className="max-w-[45%] truncate text-right text-[11px] font-semibold text-white/70">{data.current.location}</p>
+      </div>
       <div className={cn("mt-3", footprint === "1x1" ? "space-y-1.5" : footprint === "2x2" ? "space-y-1.5" : "space-y-2.5 md:mt-4 md:space-y-3")}>
         {data.daily.slice(0, dayLimit).map((day) => {
           const range = getTemperatureRangeSegments(data.daily, day);

@@ -89,6 +89,14 @@ describe("weather widget density", () => {
     expect(markup).not.toContain("D4");
   });
 
+  it("shows the current location in forecast card headers", () => {
+    const hourly = renderToStaticMarkup(<HourlyForecastCard footprint="2x1" />);
+    const tenDay = renderToStaticMarkup(<TenDayForecastCard footprint="2x1" />);
+
+    expect(hourly).toContain("Birkenhead");
+    expect(tenDay).toContain("Birkenhead");
+  });
+
   it("shows hourly detail inside the larger current weather card", () => {
     const markup = renderToStaticMarkup(<WeatherCard footprint="2x2" />);
 

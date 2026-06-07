@@ -32,7 +32,10 @@ export function HourlyForecastCard({ footprint }: CardComponentProps) {
 
   return (
     <WeatherWidgetFrame className={footprint === "4x2" ? "p-4 md:p-5" : "p-4"} tone="cloud">
-      <WeatherSectionLabel>Hourly Forecast</WeatherSectionLabel>
+      <div className="flex shrink-0 items-start justify-between gap-3">
+        <WeatherSectionLabel>Hourly Forecast</WeatherSectionLabel>
+        <p className="max-w-[45%] truncate text-right text-[11px] font-semibold text-white/70">{data.current.location}</p>
+      </div>
       <div className="mt-3 flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {data.hourly.slice(0, visibleHours).map((hour) => (
           <div className={cn("flex shrink-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] bg-white/6 px-1 py-2 text-center ring-1 ring-white/8 md:px-1.5", cardWidthClassName)} key={hour.time}>
