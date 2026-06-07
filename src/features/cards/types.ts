@@ -12,6 +12,7 @@ export type PersistedCardLayout = {
   footprint: CardFootprint;
   order: number;
   row: number;
+  visible?: boolean;
 };
 
 export type CardDefinition = {

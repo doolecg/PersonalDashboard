@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { cardBehaviorConstants, gridConstants, motionConstants } from "@/constants";
-import { cn } from "@/lib/utils";
+import { CardAddMenu } from "./CardAddMenu";
 import { getCardDragStateClassNames, isActiveGridSlot, type ActiveGridSlot } from "./cardDragFeedback";
 import { CardEditChrome } from "./CardEditChrome";
 import { getBoardColumnCount, getPositionedRowCount, getWidgetBoardMetrics, getFootprintDimensions, resolveCardPositions } from "./gridLayout";
@@ -19,7 +19,7 @@ export function CardGrid({ cards, isEditing }: CardGridProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef(new Map<string, HTMLDivElement>());
   const previousRectsRef = useRef(new Map<string, { left: number; top: number }>());
-  const { cards: runtimeCards, moveCard, resizeCard } = useCardLayout({ cards });
+  const { addCard, availableCards, cards: runtimeCards, moveCard, removeCard, resizeCard } = useCardLayout({ cards });
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [activeSlot, setActiveSlot] = useState<ActiveGridSlot | null>(null);
   const [bounds, setBounds] = useState({ height: 720, width: 1152 });
@@ -126,12 +126,13 @@ export function CardGrid({ cards, isEditing }: CardGridProps) {
   }, [draggedCardId, positionedCards]);
 
   return (
-    <div className="flex h-full w-full min-h-0 items-start justify-start overflow-hidden" ref={containerRef}>
-      <section
-        className="relative grid min-h-0 content-start gap-[var(--widget-gap)] overflow-hidden"
-        style={style}
-      >
-        {isEditing
+    <div className="relative h-full w-full min-h-0 overflow-hidden">
+      <div className="flex h-full min-h-0 w-full items-start justify-start overflow-hidden" ref={containerRef}>
+        <section
+          className="relative grid min-h-0 content-start gap-[var(--widget-gap)] overflow-hidden"
+          style={style}
+        >
+          {isEditing
             ? backgroundCells.map(({ column, row }) => (
               <button
                 className={getCardDragStateClassNames({
@@ -160,47 +161,56 @@ export function CardGrid({ cards, isEditing }: CardGridProps) {
                 type="button"
               />
             ))
-          : null}
-        {positionedCards.map(({ Component, column, footprint, id, row }) => {
-          const { columns, rows } = getFootprintDimensions(footprint);
+            : null}
+          {positionedCards.map(({ Component, column, footprint, id, row }) => {
+            const { columns, rows } = getFootprintDimensions(footprint);
 
-          return (
-          <div className={getCardDragStateClassNames({ isActiveSlot: false, isDragged: draggedCardId === id }).cardClassName} key={id} ref={(element) => {
-            if (element) {
-              cardRefs.current.set(id, element);
-            } else {
-              cardRefs.current.delete(id);
-            }
-          }} style={{ gridColumn: `${column + 1} / span ${columns}`, gridRow: `${row + 1} / span ${rows}`, zIndex: draggedCardId === id ? 2 : 1 }}>
-            <CardEditChrome
-              allowedFootprints={cardBehaviorConstants[id]?.allowedFootprints ?? [footprint]}
-              cardId={id}
-              footprint={footprint}
-              isDragging={draggedCardId === id}
-              isEditing={isEditing}
-              onDragEnd={() => {
-                setDraggedCardId(null);
-                setActiveSlot(null);
-              }}
-              onDragEnter={() => {
-                if (!draggedCardId || draggedCardId === id) {
-                  return;
-                }
+            return (
+              <div
+                className={getCardDragStateClassNames({ isActiveSlot: false, isDragged: draggedCardId === id }).cardClassName}
+                key={id}
+                ref={(element) => {
+                  if (element) {
+                    cardRefs.current.set(id, element);
+                  } else {
+                    cardRefs.current.delete(id);
+                  }
+                }}
+                style={{ gridColumn: `${column + 1} / span ${columns}`, gridRow: `${row + 1} / span ${rows}`, zIndex: draggedCardId === id ? 2 : 1 }}
+              >
+                <CardEditChrome
+                  allowedFootprints={cardBehaviorConstants[id]?.allowedFootprints ?? [footprint]}
+                  cardId={id}
+                  footprint={footprint}
+                  isDragging={draggedCardId === id}
+                  isEditing={isEditing}
+                  onDragEnd={() => {
+                    setDraggedCardId(null);
+                    setActiveSlot(null);
+                  }}
+                  onDragEnter={() => {
+                    if (!draggedCardId || draggedCardId === id) {
+                      return;
+                    }
 
-                setActiveSlot({ column, row });
-                moveCard(draggedCardId, column, row);
-              }}
-              onDragStart={(cardId) => {
-                setDraggedCardId(cardId);
-                setActiveSlot({ column, row });
-              }}
-              onResize={(nextFootprint) => resizeCard(id, nextFootprint)}
-            >
-              <Component footprint={footprint} />
-            </CardEditChrome>
-          </div>
-        );})}
-      </section>
+                    setActiveSlot({ column, row });
+                    moveCard(draggedCardId, column, row);
+                  }}
+                  onDragStart={(cardId) => {
+                    setDraggedCardId(cardId);
+                    setActiveSlot({ column, row });
+                  }}
+                  onResize={(nextFootprint) => resizeCard(id, nextFootprint)}
+                  onRemove={() => removeCard(id)}
+                >
+                  <Component footprint={footprint} />
+                </CardEditChrome>
+              </div>
+            );
+          })}
+        </section>
+      </div>
+      {isEditing ? <CardAddMenu cards={availableCards} onAddCard={addCard} /> : null}
     </div>
   );
 }

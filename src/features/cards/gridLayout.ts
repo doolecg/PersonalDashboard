@@ -119,14 +119,19 @@ export function mergeCardLayout(cards: CardDefinition[], saved: PersistedCardLay
       const allowedFootprints = cardBehaviorConstants[card.id]?.allowedFootprints;
       const nextFootprint = savedEntry?.footprint ?? card.footprint;
 
+      if (savedEntry?.visible === false) {
+        return null;
+      }
+
       return {
         ...card,
         column: savedEntry?.column ?? 0,
         footprint: allowedFootprints?.includes(nextFootprint) ? nextFootprint : card.footprint,
-        order: savedEntry?.order ?? index
-        ,row: savedEntry?.row ?? 0
+        order: savedEntry?.order ?? index,
+        row: savedEntry?.row ?? 0
       };
     })
+    .filter((card): card is RuntimeCardLayout => card !== null)
     .sort((left, right) => left.order - right.order);
 }
 
