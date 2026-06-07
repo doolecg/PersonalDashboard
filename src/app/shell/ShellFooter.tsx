@@ -1,9 +1,18 @@
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
-import { buildTickerTrack } from "./shellUi";
+import { buildTickerTrack, getMillisecondsUntilNextTickerBucket, getTickerSeedBucket } from "./shellUi";
 import type { ConnectionState, TickerItem } from "./types";
 
-const shellTickerDurationSeconds = 800;
+const shellTickerDurationSeconds = 2000;
+
+function createSeededRandom(seed: number) {
+  let state = (seed >>> 0) || 1;
+
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
 
 type ShellFooterProps = {
   tickerItems: TickerItem[];
@@ -11,10 +20,30 @@ type ShellFooterProps = {
 };
 
 export function ShellFooter({ tickerItems, connection }: ShellFooterProps) {
-  const trackItems = buildTickerTrack(tickerItems);
+  const [tickerSeedBucket, setTickerSeedBucket] = useState(() => getTickerSeedBucket(Date.now()));
+
+  useEffect(() => {
+    let timeoutId = 0;
+
+    const scheduleNextBucket = () => {
+      const now = Date.now();
+      timeoutId = window.setTimeout(() => {
+        setTickerSeedBucket(getTickerSeedBucket(Date.now()));
+        scheduleNextBucket();
+      }, getMillisecondsUntilNextTickerBucket(now));
+    };
+
+    scheduleNextBucket();
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
+
+  const trackItems = buildTickerTrack(tickerItems, createSeededRandom(tickerSeedBucket));
 
   return (
-    <footer className="mx-auto w-4/5 flex items-center gap-4 overflow-hidden rounded-3xl border border-border/60 bg-background/55 px-4 py-3 backdrop-blur-xl">
+    <footer className="mx-auto flex w-full max-w-6xl items-center gap-4 overflow-hidden rounded-3xl border border-border/60 bg-background/55 px-4 py-2.5 backdrop-blur-xl">
       <div className="relative min-w-0 flex-1 overflow-hidden">
         <div
           className="shell-ticker-track flex min-w-max items-center gap-24 pr-24"

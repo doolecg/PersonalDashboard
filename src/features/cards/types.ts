@@ -1,11 +1,11 @@
 import type { ComponentType } from "react";
 
-export type CardSize = "sm" | "md" | "lg" | "wide";
+export type CardFootprint = "1x1" | "2x1" | "2x2" | "1x2" | "4x2";
 
 export type CardDefinition = {
   id: string;
   title: string;
   description?: string;
-  size: CardSize;
+  footprint: CardFootprint;
   Component: ComponentType;
 };

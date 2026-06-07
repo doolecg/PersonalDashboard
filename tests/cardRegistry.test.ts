@@ -8,4 +8,15 @@ describe("card registry", () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(cardRegistry[0]?.Component).toBeTypeOf("function");
   });
+
+  it("uses only supported widget footprints", () => {
+    expect(cardRegistry.map((card) => card.footprint)).toEqual([
+      "2x1",
+      "1x1",
+      "2x2",
+      "4x2",
+      "2x2",
+      "1x1"
+    ]);
+  });
 });

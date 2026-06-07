@@ -12,6 +12,10 @@ const numberFromEnv = (key: string, fallback: number) => {
 export const env = {
   port: numberFromEnv("PORT", 8080),
   nodeEnv: process.env.NODE_ENV ?? "development",
+  defaultCity: process.env.DEFAULT_CITY ?? "Local",
+  defaultLat: numberFromEnv("DEFAULT_LAT", 53.373),
+  defaultLon: numberFromEnv("DEFAULT_LON", -3.016),
+  weatherProvider: process.env.WEATHER_PROVIDER ?? "ensemble",
   headerUserName: process.env.HEADER_USER_NAME ?? "",
   footerTickerItems: process.env.FOOTER_TICKER_ITEMS ?? "",
   newsRssFeeds: process.env.NEWS_RSS_FEEDS ?? "",

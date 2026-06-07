@@ -8,6 +8,7 @@ import { logger } from "./logger.js";
 import { aiRouter } from "./routes/ai.js";
 import { logsRouter } from "./routes/logs.js";
 import { shellRouter } from "./routes/shell.js";
+import { weatherRouter } from "./routes/weather.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = env.nodeEnv === "production" ? path.resolve(__dirname, "..") : process.cwd();
@@ -29,6 +30,7 @@ app.get("/api/healthz", (_req, res) => {
 
 app.use("/api/shell", shellRouter);
 app.use("/api/ai", aiRouter);
+app.use("/api/weather", weatherRouter);
 app.use("/api/log", logsRouter);
 
 if (env.nodeEnv === "production") {

@@ -39,6 +39,17 @@ function parseFeedEntries(value: string) {
     .filter((item) => item.url);
 }
 
+function shuffleItems<T>(items: T[], random: () => number) {
+  const result = [...items];
+
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+  }
+
+  return result;
+}
+
 function decodeXmlEntities(value: string) {
   return value
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -63,9 +74,9 @@ function extractRssItems(xml: string, source: string): NewsTickerItem[] {
     .filter((item): item is NewsTickerItem => Boolean(item));
 }
 
-export async function resolveTickerItems(config: NewsTickerEnvConfig, fetchFeed: FetchLike = fetch) {
+export async function resolveTickerItems(config: NewsTickerEnvConfig, fetchFeed: FetchLike = fetch, random: () => number = Math.random) {
   const fallbackItems = parseTickerItems(config.footerTickerItems);
-  const feedEntries = parseFeedEntries(config.newsRssFeeds);
+  const feedEntries = shuffleItems(parseFeedEntries(config.newsRssFeeds), random);
 
   if (!feedEntries.length) return fallbackItems;
 
