@@ -10,7 +10,7 @@ export type ShellConfig = {
   tickerItems: NewsTickerItem[];
 };
 
-const DEFAULT_USER_NAME = "User";
+const DEFAULT_USER_NAME = "Aura";
 const DEFAULT_TICKER_SOURCE = "Update";
 
 export function buildShellConfig(config: ShellEnvConfig, tickerItems?: NewsTickerItem[]): ShellConfig {

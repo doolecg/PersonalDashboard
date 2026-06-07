@@ -1,6 +1,8 @@
 export type WeatherWidgetPayload = {
   current: {
     location: string;
+    latitude?: number;
+    longitude?: number;
     temperatureC: number;
     feelsLikeC?: number;
     conditionLabel: string;
@@ -23,7 +25,11 @@ export type WeatherWidgetPayload = {
     time: string;
     label: string;
     temperatureC?: number;
+    precipitationMm?: number;
     probability?: number;
+    windKmh?: number;
+    windDirectionDeg?: number;
+    cloudCoverPercent?: number;
     conditionCode: string;
   }>;
   daily: Array<{
@@ -37,6 +43,7 @@ export type WeatherWidgetPayload = {
   details: {
     humidityPercent?: number;
     windKmh?: number;
+    windDirectionDeg?: number;
     windDirectionLabel?: string;
     pressureHpa?: number;
     visibilityKm?: number;
@@ -48,4 +55,10 @@ export type WeatherWidgetPayload = {
     updatedAt: string;
     sourcesUsed: string[];
   };
+};
+
+export type WeatherReport = {
+  report: string;
+  insight: string;
+  source: "openai" | "generated";
 };

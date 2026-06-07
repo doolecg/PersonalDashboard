@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   clampPercentage,
+  findRainWindow,
   formatConditionLabel,
   formatPrecipitationWindowLabel,
   getTemperatureRangeSegments
@@ -42,5 +43,17 @@ describe("weather card presentation helpers", () => {
       startPercent: 21.4,
       widthPercent: 57.1
     });
+  });
+
+  it("anchors the rain window to the first meaningful rain pickup", () => {
+    const points = [
+      { time: "2026-06-07T16:00:00Z", label: "Now", precipitationMm: 0, probability: 65, intensity: 0 },
+      { time: "2026-06-07T17:00:00Z", label: "17", precipitationMm: 0.08, probability: 55, intensity: 1 },
+      { time: "2026-06-07T18:00:00Z", label: "18", precipitationMm: 0, probability: 45, intensity: 0 },
+      { time: "2026-06-07T19:00:00Z", label: "19", precipitationMm: 0.55, probability: 80, intensity: 8 },
+      { time: "2026-06-07T20:00:00Z", label: "20", precipitationMm: 0.7, probability: 82, intensity: 10 }
+    ];
+
+    expect(findRainWindow(points)?.startIndex).toBe(3);
   });
 });

@@ -49,8 +49,11 @@ export function CardGrid({ cards, isEditing }: CardGridProps) {
   }, []);
 
   const isDesktop = bounds.width >= 768;
-  const lockedUnit = isDesktop ? gridConstants.desktopUnit : gridConstants.mobileUnit;
+  const designUnit = isDesktop ? gridConstants.desktopDesignUnit : gridConstants.mobileDesignUnit;
   const minimumColumns = isDesktop ? gridConstants.desktopColumns : gridConstants.mobileColumns;
+  const configuredUnit = isDesktop ? gridConstants.desktopUnit : gridConstants.mobileUnit;
+  const fittedUnit = Math.floor((bounds.width - widgetGapPx * (minimumColumns - 1)) / minimumColumns);
+  const lockedUnit = isDesktop ? configuredUnit : Math.min(configuredUnit, Math.max(1, fittedUnit));
   const columnCount = getBoardColumnCount(bounds.width, widgetGapPx, lockedUnit, minimumColumns);
   const visibleRows = Math.max(4, Math.floor((bounds.height + widgetGapPx) / (lockedUnit + widgetGapPx)));
   const positionedCards = useMemo(() => resolveCardPositions(runtimeCards, columnCount), [runtimeCards, columnCount]);
@@ -68,7 +71,7 @@ export function CardGrid({ cards, isEditing }: CardGridProps) {
     gridTemplateColumns: `repeat(${columnCount}, ${metrics.unitSize}px)`,
     "--widget-gap": "0.75rem",
     height: `${metrics.boardHeight}px`,
-    width: `${Math.min(metrics.boardWidth, bounds.width)}px`
+    width: `${metrics.boardWidth}px`
   } as CSSProperties;
   const backgroundCells = useMemo(
     () => Array.from({ length: rowCount * columnCount }, (_, index) => ({ column: index % columnCount, row: Math.floor(index / columnCount) })),
@@ -164,6 +167,13 @@ export function CardGrid({ cards, isEditing }: CardGridProps) {
             : null}
           {positionedCards.map(({ Component, column, footprint, id, row }) => {
             const { columns, rows } = getFootprintDimensions(footprint);
+            const actualWidth = metrics.unitSize * columns + widgetGapPx * (columns - 1);
+            const actualHeight = metrics.unitSize * rows + widgetGapPx * (rows - 1);
+            const designWidth = designUnit * columns + widgetGapPx * (columns - 1);
+            const designHeight = designUnit * rows + widgetGapPx * (rows - 1);
+            const contentScale = Math.min(actualWidth / designWidth, actualHeight / designHeight);
+            const offsetX = Math.max(0, (actualWidth - designWidth * contentScale) / 2);
+            const offsetY = Math.max(0, (actualHeight - designHeight * contentScale) / 2);
 
             return (
               <div
@@ -203,7 +213,20 @@ export function CardGrid({ cards, isEditing }: CardGridProps) {
                   onResize={(nextFootprint) => resizeCard(id, nextFootprint)}
                   onRemove={() => removeCard(id)}
                 >
-                  <Component footprint={footprint} />
+                  <div className="h-full w-full overflow-hidden">
+                    <div
+                      style={{
+                        height: `${designHeight}px`,
+                        marginLeft: `${offsetX}px`,
+                        marginTop: `${offsetY}px`,
+                        transform: `scale(${contentScale})`,
+                        transformOrigin: "top left",
+                        width: `${designWidth}px`
+                      }}
+                    >
+                      <Component footprint={footprint} />
+                    </div>
+                  </div>
                 </CardEditChrome>
               </div>
             );

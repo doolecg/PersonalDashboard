@@ -1,23 +1,24 @@
 import { startTransition, useEffect, useState } from "react";
+import { getDashboardLocationKey, type DashboardLocation } from "@/app/preferences/preferences";
+import { usePreferences } from "@/app/preferences/usePreferences";
 import { getWeatherData } from "@/app/apiClient";
 import type { WeatherWidgetPayload } from "./types";
-import { resolveWeatherPayload, type WeatherDevScenario } from "./devWeatherScenarios";
 
 type WeatherState = {
   data: WeatherWidgetPayload | null;
   error: string | null;
   loading: boolean;
-  scenario: WeatherDevScenario;
 };
 
 const weatherStore: WeatherState & {
+  locationKey: string;
   promise: Promise<void> | null;
   listeners: Set<() => void>;
 } = {
   data: null,
   error: null,
+  locationKey: "default",
   loading: true,
-  scenario: "live",
   promise: null,
   listeners: new Set()
 };
@@ -26,67 +27,77 @@ function emitWeatherChange() {
   weatherStore.listeners.forEach((listener) => listener());
 }
 
-async function loadWeather() {
-  if (!weatherStore.promise) {
+function getSnapshot(locationKey: string): WeatherState {
+  if (weatherStore.locationKey !== locationKey) {
+    return { data: null, error: null, loading: true };
+  }
+
+  return {
+    data: weatherStore.data,
+    error: weatherStore.error,
+    loading: weatherStore.loading
+  };
+}
+
+async function loadWeather(location: DashboardLocation | null) {
+  const locationKey = getDashboardLocationKey(location);
+
+  if (!weatherStore.promise || weatherStore.locationKey !== locationKey) {
+    weatherStore.locationKey = locationKey;
     weatherStore.loading = true;
-    weatherStore.promise = getWeatherData()
+    weatherStore.error = null;
+    emitWeatherChange();
+
+    let request: Promise<void>;
+    request = getWeatherData(location)
       .then((data) => {
+        if (weatherStore.promise !== request || weatherStore.locationKey !== locationKey) return;
         weatherStore.data = data;
         weatherStore.error = null;
       })
       .catch((error: unknown) => {
+        if (weatherStore.promise !== request || weatherStore.locationKey !== locationKey) return;
         weatherStore.error = error instanceof Error ? error.message : "Unable to load weather";
       })
       .finally(() => {
+        if (weatherStore.promise !== request || weatherStore.locationKey !== locationKey) return;
         weatherStore.loading = false;
         weatherStore.promise = null;
         emitWeatherChange();
       });
+
+    weatherStore.promise = request;
   }
 
   return weatherStore.promise;
 }
 
-export function setWeatherDevScenario(scenario: WeatherDevScenario) {
-  weatherStore.scenario = scenario;
-  emitWeatherChange();
-}
-
 export function useWeatherData() {
-  const [state, setState] = useState<WeatherState>({
-    data: weatherStore.data,
-    error: weatherStore.error,
-    loading: weatherStore.loading,
-    scenario: weatherStore.scenario
-  });
+  const { location } = usePreferences();
+  const locationKey = getDashboardLocationKey(location);
+  const [state, setState] = useState<WeatherState>(() => getSnapshot(locationKey));
 
   useEffect(() => {
     const syncState = () => {
       startTransition(() => {
-        setState({
-          data: weatherStore.data,
-          error: weatherStore.error,
-          loading: weatherStore.loading,
-          scenario: weatherStore.scenario
-        });
+        setState(getSnapshot(locationKey));
       });
     };
 
     weatherStore.listeners.add(syncState);
-    void loadWeather();
+    syncState();
+    void loadWeather(location);
 
     return () => {
       weatherStore.listeners.delete(syncState);
     };
-  }, []);
+  }, [location, locationKey]);
 
   return {
     ...state,
-    data: resolveWeatherPayload({ isDev: import.meta.env.DEV, livePayload: state.data, scenario: state.scenario }),
     refresh: async () => {
       weatherStore.promise = null;
-      await loadWeather();
-    },
-    setScenario: setWeatherDevScenario
+      await loadWeather(location);
+    }
   };
 }

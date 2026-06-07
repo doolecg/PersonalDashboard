@@ -1,4 +1,4 @@
-const DEFAULT_USER_NAME = "User";
+const DEFAULT_USER_NAME = "Aura";
 const DEFAULT_TICKER_SOURCE = "Update";
 export function buildShellConfig(config, tickerItems) {
     const userName = config.headerUserName.trim() || DEFAULT_USER_NAME;

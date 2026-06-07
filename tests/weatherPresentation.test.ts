@@ -20,7 +20,7 @@ function createHourlyPoint(index: number, precipitationMm: number, precipitation
 }
 
 describe("weather presentation", () => {
-  it("creates 16 precipitation graph points for the next 4 hours", () => {
+  it("creates one precipitation graph point per hour on an absolute intensity scale", () => {
     const payload = buildWeatherWidgetPayload({
       location: {
         city: "Birkenhead",
@@ -50,8 +50,18 @@ describe("weather presentation", () => {
       ]
     } satisfies EnsembleWeather);
 
-    expect(payload.precipitation.points).toHaveLength(16);
+    // One point per hour (capped at 24); the fixture supplies four hours.
+    expect(payload.precipitation.points).toHaveLength(4);
     expect(payload.current.location).toBe("Birkenhead");
+
+    // Light rain (0.4mm/h) maps to a short bar, not a clipped full-height one.
+    const intensities = payload.precipitation.points.map((point) => point.intensity);
+    expect(Math.max(...intensities)).toBeLessThanOrEqual(100);
+    expect(intensities[0]).toBe(8);
+    // The second hour (0.2mm) is lighter than the first (0.4mm).
+    expect(intensities[1]).toBeLessThan(intensities[0]);
+    // The dry third hour reads as no bar.
+    expect(intensities[2]).toBe(0);
   });
 
   it("returns a no-precipitation summary when all values are zero", () => {

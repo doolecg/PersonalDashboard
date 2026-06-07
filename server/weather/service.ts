@@ -7,24 +7,47 @@ import { fetchOpenMeteoIcon } from "./sourceOpenMeteoIcon.js";
 import { fetchOpenMeteoUkmo } from "./sourceOpenMeteoUkmo.js";
 import type { NormalizedWeatherSource, WeatherWidgetPayload } from "./types.js";
 
-let cached: { expiresAt: number; payload: WeatherWidgetPayload } | null = null;
+export type WeatherLocation = {
+  latitude: number;
+  longitude: number;
+  city: string;
+};
 
-export async function getWeatherWidgetPayload(): Promise<WeatherWidgetPayload> {
+// Cache one payload per resolved location so changing the dashboard location
+// does not serve a stale forecast from a different place.
+const cache = new Map<string, { expiresAt: number; payload: WeatherWidgetPayload }>();
+
+function resolveLocation(location?: Partial<WeatherLocation>): WeatherLocation {
+  const latitude = Number.isFinite(location?.latitude) ? (location!.latitude as number) : env.defaultLat;
+  const longitude = Number.isFinite(location?.longitude) ? (location!.longitude as number) : env.defaultLon;
+  const city = location?.city?.trim() || env.defaultCity;
+  return { latitude, longitude, city };
+}
+
+function cacheKey({ latitude, longitude }: WeatherLocation) {
+  return `${latitude.toFixed(4)},${longitude.toFixed(4)}`;
+}
+
+export async function getWeatherWidgetPayload(location?: Partial<WeatherLocation>): Promise<WeatherWidgetPayload> {
+  const { latitude, longitude, city } = resolveLocation(location);
+  const key = cacheKey({ latitude, longitude, city });
+  const cached = cache.get(key);
+
   if (cached && cached.expiresAt > Date.now()) {
     return cached.payload;
   }
 
   try {
     const [ukmo, metno, icon] = await Promise.allSettled([
-      fetchOpenMeteoUkmo(env.defaultLat, env.defaultLon),
-      fetchMetNoForecast(env.defaultLat, env.defaultLon),
-      fetchOpenMeteoIcon(env.defaultLat, env.defaultLon)
+      fetchOpenMeteoUkmo(latitude, longitude),
+      fetchMetNoForecast(latitude, longitude),
+      fetchOpenMeteoIcon(latitude, longitude)
     ]);
 
     const normalized = [
-      ukmo.status === "fulfilled" ? normalizeOpenMeteo(ukmo.value, "open-meteo-ukmo", env.defaultCity) : null,
-      metno.status === "fulfilled" ? normalizeMetNo(metno.value, env.defaultCity, env.defaultLat, env.defaultLon) : null,
-      icon.status === "fulfilled" ? normalizeOpenMeteo(icon.value, "open-meteo-icon", env.defaultCity) : null
+      ukmo.status === "fulfilled" ? normalizeOpenMeteo(ukmo.value, "open-meteo-ukmo", city) : null,
+      metno.status === "fulfilled" ? normalizeMetNo(metno.value, city, latitude, longitude) : null,
+      icon.status === "fulfilled" ? normalizeOpenMeteo(icon.value, "open-meteo-icon", city) : null
     ].filter((source): source is NormalizedWeatherSource => source !== null);
 
     if (!normalized.length) {
@@ -32,7 +55,7 @@ export async function getWeatherWidgetPayload(): Promise<WeatherWidgetPayload> {
     }
 
     const payload = buildWeatherWidgetPayload(mergeWeatherSources(normalized));
-    cached = { expiresAt: Date.now() + (5 * 60 * 1000), payload };
+    cache.set(key, { expiresAt: Date.now() + (5 * 60 * 1000), payload });
     return payload;
   } catch (error) {
     if (cached) {

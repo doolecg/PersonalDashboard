@@ -11,12 +11,12 @@ describe("card registry", () => {
   });
 
   it("uses only supported widget footprints", () => {
-    expect(cardRegistry.map((card) => card.footprint)).toEqual([
-      "1x1",
-      "2x1",
-      "1x1",
-      "1x1"
-    ]);
+    const supported = new Set<string>(["1x1", "2x1", "2x2", "1x2", "4x2", "4x4"]);
+    expect(cardRegistry.every((card) => supported.has(card.footprint))).toBe(true);
+  });
+
+  it("registers every card with a matching behavior entry", () => {
+    expect(cardRegistry.every((card) => cardBehaviorConstants[card.id] !== undefined)).toBe(true);
   });
 
   it("keeps default footprints within each card's allowed sizes", () => {

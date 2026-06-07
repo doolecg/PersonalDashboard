@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { runAssistant } from "../ai/assistant.js";
 import { redactContextForPrompt } from "../ai/redactContext.js";
 import { env } from "../env.js";
 import { logger } from "../logger.js";
@@ -62,6 +63,29 @@ aiRouter.patch("/status", (req, res) => {
         return res.status(400).json({ message: "Invalid AI routing mode." });
     setAiRoutingMode(mode);
     res.json(getAiStatus());
+});
+const assistantRoles = new Set(["system", "user", "assistant"]);
+function assistantMessagesFromBody(body) {
+    const value = body;
+    if (!Array.isArray(value.messages))
+        return [];
+    return value.messages
+        .filter((message) => assistantRoles.has(message.role ?? "") && typeof message.content === "string")
+        .map((message) => ({ role: message.role, content: message.content }));
+}
+aiRouter.post("/assistant", async (req, res) => {
+    const messages = assistantMessagesFromBody(req.body);
+    if (!messages.length)
+        return res.status(400).json({ message: "At least one message is required." });
+    const context = req.body?.context;
+    const contextText = context ? redactContextForPrompt(context, env.aiMaxContextChars) : undefined;
+    try {
+        res.json(await runAssistant(messages, contextText));
+    }
+    catch (error) {
+        logger.error("AI assistant route failed", error, { route: "/api/ai/assistant" });
+        res.status(503).json({ message: error instanceof Error ? error.message : "Assistant unavailable" });
+    }
 });
 aiRouter.post("/chat", async (req, res) => {
     const request = requestFromBody(req.body, "Answer concisely from the supplied Aura context.");

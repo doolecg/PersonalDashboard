@@ -17,9 +17,10 @@ function createSeededRandom(seed: number) {
 type ShellFooterProps = {
   tickerItems: TickerItem[];
   connection: ConnectionState;
+  showTicker?: boolean;
 };
 
-export function ShellFooter({ tickerItems, connection }: ShellFooterProps) {
+export function ShellFooter({ tickerItems, connection, showTicker = true }: ShellFooterProps) {
   const [tickerSeedBucket, setTickerSeedBucket] = useState(() => getTickerSeedBucket(Date.now()));
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export function ShellFooter({ tickerItems, connection }: ShellFooterProps) {
   return (
     <footer className="mx-auto flex w-full max-w-6xl items-center gap-4 overflow-hidden rounded-3xl border border-border/60 bg-background/55 px-4 py-2.5 backdrop-blur-xl">
       <div className="relative min-w-0 flex-1 overflow-hidden">
+        {showTicker ? (
         <div
           className="shell-ticker-track flex min-w-max items-center gap-24 pr-24"
           style={{ "--shell-ticker-duration": `${shellTickerDurationSeconds}s` } as CSSProperties}
@@ -69,6 +71,7 @@ export function ShellFooter({ tickerItems, connection }: ShellFooterProps) {
             </span>
           ))}
         </div>
+        ) : null}
       </div>
       <div
         className={cn(

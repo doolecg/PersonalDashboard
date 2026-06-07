@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getShellConfig } from "./api";
 import type { ShellConfig } from "./types";
 
-const fallbackConfig: ShellConfig = { userName: "User", tickerItems: [] };
+const fallbackConfig: ShellConfig = { userName: "Aura", tickerItems: [] };
 
 export function useShellConfig() {
   const [config, setConfig] = useState<ShellConfig>(fallbackConfig);

@@ -1,0 +1,19 @@
+import { weatherTool } from "./weatherTool.js";
+// All tools the assistant can call. Add new dashboard capabilities here and
+// they become available to the model with no other wiring required.
+export const assistantTools = [weatherTool];
+const toolsByName = new Map(assistantTools.map((tool) => [tool.name, tool]));
+export function getAssistantTool(name) {
+    return toolsByName.get(name);
+}
+// Shape the tool list for the OpenAI chat-completions `tools` parameter.
+export function toolSpecsForOpenAi() {
+    return assistantTools.map((tool) => ({
+        type: "function",
+        function: {
+            name: tool.name,
+            description: tool.description,
+            parameters: tool.parameters
+        }
+    }));
+}

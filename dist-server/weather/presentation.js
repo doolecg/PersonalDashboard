@@ -40,20 +40,23 @@ function summaryFromPrecipitation(hourly) {
         return "Rain expected within the hour.";
     return "Light precipitation possible later today.";
 }
+// Map a rain rate (mm/h) to a 0-100 "fill" so bars stay on an absolute scale:
+// light rain reads short, heavy rain fills the graph, and nothing is forced to
+// 100 the way per-window normalization did. ~5mm/h counts as a full bar.
+const HEAVY_RAIN_MM_PER_HOUR = 5;
+function rainRateToIntensity(precipitationMm) {
+    return Math.max(0, Math.min(100, Math.round((precipitationMm / HEAVY_RAIN_MM_PER_HOUR) * 100)));
+}
+// Emit one bar per hour for the next 24 hours. The card windows this down to
+// 4h (1x1), 12h (2x1) or 24h (2x2) depending on footprint.
 function buildPrecipitationPoints(hourly) {
-    const nextHours = hourly.slice(0, 4);
-    const maxPrecipitation = Math.max(0.1, ...nextHours.map((point) => point.precipitationMm ?? 0));
-    return nextHours.flatMap((point) => {
-        const precipitationMm = point.precipitationMm ?? 0;
-        const probability = point.precipitationProbability ?? 0;
-        return Array.from({ length: 4 }, (_, quarterIndex) => ({
-            time: `${point.time}:${quarterIndex}`,
-            label: formatHourLabel(point.time),
-            precipitationMm: Number((precipitationMm / 4).toFixed(3)),
-            probability,
-            intensity: Math.round((precipitationMm / maxPrecipitation) * 100)
-        }));
-    });
+    return hourly.slice(0, 24).map((point) => ({
+        time: point.time,
+        label: formatHourLabel(point.time),
+        precipitationMm: Number((point.precipitationMm ?? 0).toFixed(4)),
+        probability: Math.round(point.precipitationProbability ?? 0),
+        intensity: rainRateToIntensity(point.precipitationMm ?? 0)
+    }));
 }
 function formatWindDirection(deg) {
     if (typeof deg !== "number")
@@ -68,6 +71,8 @@ export function buildWeatherWidgetPayload(weather) {
     return {
         current: {
             location: weather.location.city,
+            latitude: weather.location.latitude,
+            longitude: weather.location.longitude,
             temperatureC: Math.round(weather.current.temperatureC ?? 0),
             feelsLikeC: weather.current.apparentTemperatureC,
             conditionLabel: conditionLabel(currentConditionCode),
@@ -84,7 +89,11 @@ export function buildWeatherWidgetPayload(weather) {
             time: point.time,
             label: formatHourLabel(point.time),
             temperatureC: point.temperatureC,
+            precipitationMm: Number((point.precipitationMm ?? 0).toFixed(4)),
             probability: point.precipitationProbability,
+            windKmh: point.windSpeedKmh,
+            windDirectionDeg: point.windDirectionDeg,
+            cloudCoverPercent: point.cloudCoverPercent,
             conditionCode: conditionCodeFromWeatherCode(point.weatherCode)
         })),
         daily: weather.daily.slice(0, 10).map((point) => ({
@@ -98,6 +107,7 @@ export function buildWeatherWidgetPayload(weather) {
         details: {
             humidityPercent: weather.current.humidityPercent,
             windKmh: weather.current.windSpeedKmh,
+            windDirectionDeg: weather.current.windDirectionDeg,
             windDirectionLabel: formatWindDirection(weather.current.windDirectionDeg),
             pressureHpa: weather.current.pressureHpa,
             visibilityKm: weather.current.visibilityKm,

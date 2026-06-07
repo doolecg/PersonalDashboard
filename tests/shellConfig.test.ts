@@ -22,7 +22,7 @@ describe("shell config", () => {
       headerUserName: "   ",
       footerTickerItems: "   "
     })).toEqual({
-      userName: "User",
+      userName: "Aura",
       tickerItems: []
     });
   });

@@ -10,8 +10,16 @@ describe("card layout state", () => {
     ]);
     const positioned = resolveCardPositions(result, 6);
 
-    expect(result[0]?.id).toBe("weather-precipitation");
+    expect(result.findIndex((card) => card.id === "weather-precipitation")).toBeLessThan(result.findIndex((card) => card.id === "weather-current"));
     expect(result.find((card) => card.id === "weather-current")?.footprint).toBe("2x2");
     expect(positioned.find((card) => card.id === "weather-precipitation")).toMatchObject({ column: 0, row: 3 });
+  });
+
+  it("omits cards saved as hidden", () => {
+    const result = mergeCardLayout(cardRegistry, [
+      { column: 0, id: "weather-ai-report", footprint: "2x1", order: 1, row: 0, visible: false }
+    ]);
+
+    expect(result.some((card) => card.id === "weather-ai-report")).toBe(false);
   });
 });

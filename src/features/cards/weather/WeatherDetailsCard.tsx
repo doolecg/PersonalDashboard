@@ -1,30 +1,35 @@
-import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
+import { WeatherWidgetFrame } from "./WeatherWidgetFrame";
+import { TempRange, WeatherGlyph, WeatherHeader } from "./weatherGlyph";
+import { getHoursUntilPrecipitation, kmhToMph } from "./weatherPresentation";
 import type { CardComponentProps } from "../types";
-import { WeatherDivider, WeatherSectionLabel, WeatherWidgetFrame } from "./WeatherWidgetFrame";
 import { useWeatherData } from "./useWeatherData";
 
-function formatTime(value?: string) {
-  if (!value) return "--";
-  return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+function DetailRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="truncate text-white/60">{label}</span>
+      <span className="flex shrink-0 items-center gap-1 font-medium text-white/92">{children}</span>
+    </div>
+  );
 }
 
 export function WeatherDetailsCard({ footprint }: CardComponentProps) {
   const { data, error, loading } = useWeatherData();
-  const details = data?.details;
   const isCompact = footprint === "1x1";
 
   if (loading && !data) {
     return (
-      <WeatherWidgetFrame className="p-5">
-        <p className="text-sm text-white/72">Loading details...</p>
+      <WeatherWidgetFrame className="p-4">
+        <p className="text-xs text-white/72">Loading details...</p>
       </WeatherWidgetFrame>
     );
   }
 
   if (error && !data) {
     return (
-      <WeatherWidgetFrame className="p-5">
-        <p className="text-sm text-rose-100">{error}</p>
+      <WeatherWidgetFrame className="p-4">
+        <p className="text-xs text-rose-100">{error}</p>
       </WeatherWidgetFrame>
     );
   }
@@ -33,30 +38,52 @@ export function WeatherDetailsCard({ footprint }: CardComponentProps) {
     return null;
   }
 
-  return (
-    <WeatherWidgetFrame className={isCompact ? "p-3.5" : "p-4 md:p-5"} tone="clear">
-      <WeatherSectionLabel>Conditions</WeatherSectionLabel>
-      <div className="mt-3 grid min-h-0 flex-1 content-start gap-3 text-sm">
-        <div className="min-w-0">
-          <p className={cn("font-light tracking-tight text-white", isCompact ? "text-2xl" : "text-3xl md:text-4xl")}>{Math.round(details?.uvIndex ?? 0)}</p>
-          <p className="text-[11px] text-white/62 md:text-sm">UV index</p>
+  const details = data.details;
+  const temperature = Math.round(data.current.temperatureC);
+  const high = Math.round(data.current.highC ?? data.current.temperatureC);
+  const low = Math.round(data.current.lowC ?? data.current.temperatureC);
+  const feels = Math.round(data.current.feelsLikeC ?? data.current.temperatureC);
+  const precipHours = getHoursUntilPrecipitation(data.precipitation.points);
+
+  const precipRow = (
+    <DetailRow label="Precip">
+      <WeatherGlyph code={data.current.conditionCode} className="h-3.5 w-3.5 text-white/80" />
+      {precipHours ? `${precipHours}h` : "None"}
+    </DetailRow>
+  );
+  const windRow = <DetailRow label="Wind">{kmhToMph(details?.windKmh)} mph</DetailRow>;
+  const uvRow = <DetailRow label="UV Index">{Math.round(details?.uvIndex ?? 0)}</DetailRow>;
+  const feelsRow = <DetailRow label="Feels Like">{feels}°</DetailRow>;
+
+  if (isCompact) {
+    return (
+      <WeatherWidgetFrame className="px-4 py-3" tone="cloud">
+        <div className="flex h-full min-h-0 flex-col gap-0.5">
+          <WeatherHeader location={data.current.location} code={data.current.conditionCode} />
+          <TempRange temperature={temperature} high={high} low={low} temperatureClassName="text-[2rem]" />
+          <div className="mt-auto space-y-0.5 text-[12px] leading-tight">
+            {precipRow}
+            {windRow}
+            {feelsRow}
+          </div>
         </div>
-        <WeatherDivider />
-        <div className={cn("text-white/80", isCompact ? "space-y-1 text-[11px]" : "space-y-1.5 text-[12px] md:text-sm")}>
-          <div className="flex justify-between gap-3">
-            <span className="text-white/58">Humidity</span>
-            <span>{Math.round(details?.humidityPercent ?? 0)}%</span>
+      </WeatherWidgetFrame>
+    );
+  }
+
+  // 2x1 — short and wide: header on top, two columns below.
+  return (
+    <WeatherWidgetFrame className="p-4" tone="cloud">
+      <div className="flex h-full min-h-0 flex-col">
+        <WeatherHeader location={data.current.location} code={data.current.conditionCode} />
+        <div className="grid flex-1 grid-cols-2 items-center gap-x-4">
+          <TempRange temperature={temperature} high={high} low={low} temperatureClassName="text-[2.85rem]" />
+          <div className="space-y-1 text-[12px]">
+            {precipRow}
+            {windRow}
+            {uvRow}
+            {feelsRow}
           </div>
-          <div className="flex justify-between gap-3">
-            <span className="text-white/58">Wind</span>
-            <span>{Math.round(details?.windKmh ?? 0)} km/h</span>
-          </div>
-          {!isCompact ? (
-            <div className="flex justify-between gap-3">
-              <span className="text-white/58">Sun</span>
-              <span className="text-right leading-4">{formatTime(details?.sunrise)} / {formatTime(details?.sunset)}</span>
-            </div>
-          ) : null}
         </div>
       </div>
     </WeatherWidgetFrame>

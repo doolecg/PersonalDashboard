@@ -4,6 +4,7 @@ import { HourlyForecastCard } from "../src/features/cards/weather/HourlyForecast
 import { PrecipitationCard } from "../src/features/cards/weather/PrecipitationCard";
 import { TenDayForecastCard } from "../src/features/cards/weather/TenDayForecastCard";
 import { WeatherCard } from "../src/features/cards/weather/WeatherCard";
+import { WeatherMapCard } from "../src/features/cards/weather/WeatherMapCard";
 import type { WeatherWidgetPayload } from "../src/features/cards/weather/types";
 
 const useWeatherDataMock = vi.fn();
@@ -16,6 +17,8 @@ function buildWeatherPayload(): WeatherWidgetPayload {
   return {
     current: {
       location: "Birkenhead",
+      latitude: 53.373,
+      longitude: -3.016,
       temperatureC: 15,
       feelsLikeC: 14,
       conditionLabel: "Cloudy",
@@ -76,17 +79,25 @@ describe("weather widget density", () => {
   it("limits the compact hourly card to 12 visible hours", () => {
     const markup = renderToStaticMarkup(<HourlyForecastCard footprint="2x1" />);
 
-    expect(markup).toContain("H00");
+    expect(markup).toContain("Now");
     expect(markup).toContain("H11");
     expect(markup).not.toContain("H12");
   });
 
-  it("limits the compact ten-day card to three visible days", () => {
+  it("limits the compact ten-day card to four visible days", () => {
     const markup = renderToStaticMarkup(<TenDayForecastCard footprint="1x1" />);
 
-    expect(markup).toContain("D1");
-    expect(markup).toContain("D3");
-    expect(markup).not.toContain("D4");
+    expect(markup).toContain("Today");
+    expect(markup).toContain("D4");
+    expect(markup).not.toContain("D5");
+  });
+
+  it("shows the current location in forecast card headers", () => {
+    const hourly = renderToStaticMarkup(<HourlyForecastCard footprint="2x1" />);
+    const tenDay = renderToStaticMarkup(<TenDayForecastCard footprint="2x1" />);
+
+    expect(hourly).toContain("Birkenhead");
+    expect(tenDay).toContain("Birkenhead");
   });
 
   it("shows hourly detail inside the larger current weather card", () => {
@@ -96,38 +107,51 @@ describe("weather widget density", () => {
     expect(markup).toContain("H05");
   });
 
+  it("shows sunset detail inside the current weather card", () => {
+    const markup = renderToStaticMarkup(<WeatherCard footprint="1x1" />);
+
+    expect(markup).toContain("Sunset");
+  });
+
   it("applies footprint-specific headline sizing in the current weather card", () => {
     const compact = renderToStaticMarkup(<WeatherCard footprint="1x1" />);
     const medium = renderToStaticMarkup(<WeatherCard footprint="2x1" />);
     const expanded = renderToStaticMarkup(<WeatherCard footprint="2x2" />);
 
-    expect(compact).toContain("text-[2.5rem]");
-    expect(medium).toContain("text-[3.35rem]");
-    expect(expanded).toContain("text-[4.35rem]");
+    expect(compact).toContain("text-[3rem]");
+    expect(medium).toContain("text-[3.4rem]");
+    expect(expanded).toContain("text-[3.75rem]");
   });
 
-  it("applies footprint-specific spacing and opacity polish in the precipitation graph", () => {
+  it("uses the real Windy map embed when no API key is configured", () => {
+    const markup = renderToStaticMarkup(<WeatherMapCard footprint="2x2" />);
+
+    expect(markup).toContain("data-weather-map=\"windy-embed\"");
+    expect(markup).toContain("https://embed.windy.com/embed.html");
+    expect(markup).toContain("lat=53.373");
+    expect(markup).toContain("lon=-3.016");
+  });
+
+  it("renders the compact intensity graph and the banded graph per footprint", () => {
     const compact = renderToStaticMarkup(<PrecipitationCard footprint="2x1" />);
     const expanded = renderToStaticMarkup(<PrecipitationCard footprint="2x2" />);
 
-    expect(compact).toContain("gap-px");
-    expect(expanded).toContain("gap-[4px]");
-    expect(compact).toContain("opacity:0.22");
-    expect(expanded).toContain("opacity:0.22");
+    // Compact footprints keep the simple intensity bars.
+    expect(compact).toContain("gap-0.5");
+    expect(compact).toContain("opacity:0.32");
+    // The larger footprints use the Light / Moderate / Heavy banded graph.
+    expect(expanded).toContain("Heavy");
+    expect(expanded).toContain("Moderate");
+    expect(expanded).toContain("Light");
   });
 
-  it("renders the next-hour rain graph as the lower band in the compact precipitation card", () => {
+  it("renders the next-hour rain graph in the compact precipitation card", () => {
     const markup = renderToStaticMarkup(<PrecipitationCard footprint="2x1" />);
 
     expect(markup).toContain("data-compact-precipitation-widget=\"true\"");
-    expect(markup).toContain("h-[4.75rem]");
-    expect(markup).toContain("grid-cols-[6.25rem_1fr_auto]");
-    expect(markup).toContain("data-precipitation-rails=\"true\"");
-    expect(markup).toContain("data-precipitation-graph=\"next-hour\"");
-    expect(markup).toContain("gap-px");
-    expect(markup).toContain("h-[2.35rem]");
-    expect(markup).toContain("data-precipitation-labels=\"true\"");
-    expect((markup.match(/data-precipitation-bar/g) ?? []).length).toBe(60);
+    expect(markup).toContain("data-precipitation-graph=\"next-hours\"");
+    // 2x1 shows a 12-hour window.
+    expect((markup.match(/data-precipitation-bar/g) ?? []).length).toBe(12);
   });
 
   it("fits precipitation information across every supported footprint", () => {
@@ -137,9 +161,9 @@ describe("weather widget density", () => {
     const fourByFour = renderToStaticMarkup(<PrecipitationCard footprint="4x4" />);
 
     expect(oneByOne).toContain("data-precipitation-footprint=\"1x1\"");
-    expect(oneByOne).toContain("data-precipitation-graph=\"next-hour\"");
+    expect(oneByOne).toContain("data-precipitation-graph=\"next-hours\"");
     expect(twoByOne).toContain("data-precipitation-footprint=\"2x1\"");
-    expect(twoByOne).toContain("grid-cols-[6.25rem_1fr_auto]");
+    expect(twoByOne).toContain("data-compact-precipitation-widget=\"true\"");
     expect(twoByTwo).toContain("data-precipitation-footprint=\"2x2\"");
     expect(twoByTwo).toContain("data-precipitation-details=\"expanded\"");
     expect(fourByFour).toContain("data-precipitation-footprint=\"4x4\"");
