@@ -1,12 +1,15 @@
-import { Settings2 } from "lucide-react";
+import { Pencil, Settings2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type ShellHeaderProps = {
+  isEditingCards: boolean;
+  onToggleEditingCards: () => void;
   userName: string;
   timeText: string;
   dateText: string;
 };
 
-export function ShellHeader({ userName, timeText, dateText }: ShellHeaderProps) {
+export function ShellHeader({ dateText, isEditingCards, onToggleEditingCards, timeText, userName }: ShellHeaderProps) {
   return (
     <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 rounded-3xl border border-border/95 bg-background/55 px-5 py-3 backdrop-blur-xl">
       <div className="min-w-0">
@@ -18,6 +21,15 @@ export function ShellHeader({ userName, timeText, dateText }: ShellHeaderProps) 
           <p className="text-base font-semibold text-foreground">{timeText}</p>
           <p className="text-xs text-muted-foreground">{dateText}</p>
         </div>
+        <Button
+          aria-label={isEditingCards ? "Finish editing cards" : "Edit cards"}
+          onClick={onToggleEditingCards}
+          size="icon-sm"
+          type="button"
+          variant={isEditingCards ? "default" : "outline"}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
         <button
           type="button"
           aria-label="Open settings"

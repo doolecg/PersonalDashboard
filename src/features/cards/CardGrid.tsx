@@ -1,48 +1,28 @@
 import type { CSSProperties } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { cardBehaviorConstants, gridConstants, motionConstants } from "@/constants";
 import { cn } from "@/lib/utils";
-import { getBoardRowCount, getWidgetBoardMetrics } from "./gridLayout";
-import type { CardDefinition, CardFootprint } from "./types";
+import { getCardDragStateClassNames, isActiveGridSlot, type ActiveGridSlot } from "./cardDragFeedback";
+import { CardEditChrome } from "./CardEditChrome";
+import { getBoardColumnCount, getPositionedRowCount, getWidgetBoardMetrics, getFootprintDimensions, resolveCardPositions } from "./gridLayout";
+import { useCardLayout } from "./useCardLayout";
+import type { CardDefinition } from "./types";
 
-const mobileColumnCount = 4;
-const desktopColumnCount = 6;
-const widgetGapPx = 12;
-const widgetScale = 1;
-
-const footprintClassName: Record<CardFootprint, string> = {
-  "1x1": "col-span-1 row-span-1",
-  "2x1": "col-span-2 row-span-1",
-  "2x2": "col-span-2 row-span-2",
-  "1x2": "col-span-1 row-span-2",
-  "4x2": "col-span-4 row-span-2 md:col-span-4"
-};
+const widgetGapPx = gridConstants.gapPx;
 
 type CardGridProps = {
   cards: CardDefinition[];
+  isEditing: boolean;
 };
 
-export function CardGrid({ cards }: CardGridProps) {
+export function CardGrid({ cards, isEditing }: CardGridProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mobileRowCount = getBoardRowCount(cards, mobileColumnCount);
-  const desktopRowCount = getBoardRowCount(cards, desktopColumnCount);
-  const [metrics, setMetrics] = useState(() => ({
-    desktop: getWidgetBoardMetrics({
-      availableHeight: 720,
-      availableWidth: 1152,
-      columnCount: desktopColumnCount,
-      gap: widgetGapPx,
-      rowCount: desktopRowCount,
-      scale: widgetScale
-    }),
-    mobile: getWidgetBoardMetrics({
-      availableHeight: 720,
-      availableWidth: 400,
-      columnCount: mobileColumnCount,
-      gap: widgetGapPx,
-      rowCount: mobileRowCount,
-      scale: widgetScale
-    })
-  }));
+  const cardRefs = useRef(new Map<string, HTMLDivElement>());
+  const previousRectsRef = useRef(new Map<string, { left: number; top: number }>());
+  const { cards: runtimeCards, moveCard, resizeCard } = useCardLayout({ cards });
+  const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
+  const [activeSlot, setActiveSlot] = useState<ActiveGridSlot | null>(null);
+  const [bounds, setBounds] = useState({ height: 720, width: 1152 });
 
   useEffect(() => {
     const container = containerRef.current;
@@ -52,26 +32,9 @@ export function CardGrid({ cards }: CardGridProps) {
     }
 
     const updateMetrics = () => {
-      const nextWidth = container.clientWidth;
-      const nextHeight = container.clientHeight;
-
-      setMetrics({
-        desktop: getWidgetBoardMetrics({
-          availableHeight: nextHeight,
-          availableWidth: nextWidth,
-          columnCount: desktopColumnCount,
-          gap: widgetGapPx,
-          rowCount: desktopRowCount,
-          scale: widgetScale
-        }),
-        mobile: getWidgetBoardMetrics({
-          availableHeight: nextHeight,
-          availableWidth: nextWidth,
-          columnCount: mobileColumnCount,
-          gap: widgetGapPx,
-          rowCount: mobileRowCount,
-          scale: widgetScale
-        })
+      setBounds({
+        height: container.clientHeight,
+        width: container.clientWidth
       });
     };
 
@@ -83,29 +46,160 @@ export function CardGrid({ cards }: CardGridProps) {
     return () => {
       observer.disconnect();
     };
-  }, [desktopRowCount, mobileRowCount]);
+  }, []);
+
+  const isDesktop = bounds.width >= 768;
+  const lockedUnit = isDesktop ? gridConstants.desktopUnit : gridConstants.mobileUnit;
+  const minimumColumns = isDesktop ? gridConstants.desktopColumns : gridConstants.mobileColumns;
+  const columnCount = getBoardColumnCount(bounds.width, widgetGapPx, lockedUnit, minimumColumns);
+  const visibleRows = Math.max(4, Math.floor((bounds.height + widgetGapPx) / (lockedUnit + widgetGapPx)));
+  const positionedCards = useMemo(() => resolveCardPositions(runtimeCards, columnCount), [runtimeCards, columnCount]);
+  const occupiedRows = getPositionedRowCount(runtimeCards, columnCount);
+  const rowCount = Math.max(occupiedRows + 2, visibleRows);
+  const metrics = getWidgetBoardMetrics({
+    columnCount,
+    gap: widgetGapPx,
+    lockedUnit,
+    rowCount
+  });
 
   const style = {
-    "--widget-board-height": `${metrics.mobile.boardHeight}px`,
-    "--widget-board-height-desktop": `${metrics.desktop.boardHeight}px`,
-    "--widget-board-width": `${metrics.mobile.boardWidth}px`,
-    "--widget-board-width-desktop": `${metrics.desktop.boardWidth}px`,
+    gridAutoRows: `${metrics.unitSize}px`,
+    gridTemplateColumns: `repeat(${columnCount}, ${metrics.unitSize}px)`,
     "--widget-gap": "0.75rem",
-    "--widget-unit": `${metrics.mobile.unitSize}px`,
-    "--widget-unit-desktop": `${metrics.desktop.unitSize}px`
+    height: `${metrics.boardHeight}px`,
+    width: `${Math.min(metrics.boardWidth, bounds.width)}px`
   } as CSSProperties;
+  const backgroundCells = useMemo(
+    () => Array.from({ length: rowCount * columnCount }, (_, index) => ({ column: index % columnCount, row: Math.floor(index / columnCount) })),
+    [columnCount, rowCount]
+  );
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const nextRects = new Map<string, { left: number; top: number }>();
+
+    positionedCards.forEach(({ id }) => {
+      const element = cardRefs.current.get(id);
+
+      if (!element) {
+        return;
+      }
+
+      const rect = element.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const nextRect = {
+        left: rect.left - containerRect.left,
+        top: rect.top - containerRect.top
+      };
+
+      nextRects.set(id, nextRect);
+
+      const previousRect = previousRectsRef.current.get(id);
+
+      if (!previousRect || draggedCardId === id) {
+        return;
+      }
+
+      const deltaX = previousRect.left - nextRect.left;
+      const deltaY = previousRect.top - nextRect.top;
+
+      if (deltaX === 0 && deltaY === 0) {
+        return;
+      }
+
+      element.style.transition = "none";
+      element.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+      requestAnimationFrame(() => {
+        element.style.transition = `transform ${motionConstants.reorderDurationMs}ms ${motionConstants.reorderEase}`;
+        element.style.transform = "translate(0px, 0px)";
+      });
+    });
+
+    previousRectsRef.current = nextRects;
+  }, [draggedCardId, positionedCards]);
 
   return (
-    <div className="flex h-full w-full min-h-0 items-center justify-center overflow-hidden" ref={containerRef}>
+    <div className="flex h-full w-full min-h-0 items-start justify-start overflow-hidden" ref={containerRef}>
       <section
-        className="grid h-[var(--widget-board-height)] w-[var(--widget-board-width)] min-h-0 grid-cols-[repeat(4,var(--widget-unit))] auto-rows-[var(--widget-unit)] gap-[var(--widget-gap)] overflow-hidden md:h-[var(--widget-board-height-desktop)] md:w-[var(--widget-board-width-desktop)] md:grid-cols-[repeat(6,var(--widget-unit-desktop))] md:auto-rows-[var(--widget-unit-desktop)]"
+        className="relative grid min-h-0 content-start gap-[var(--widget-gap)] overflow-hidden"
         style={style}
       >
-        {cards.map(({ Component, footprint, id }) => (
-          <div className={cn("min-h-0 overflow-hidden", footprintClassName[footprint])} key={id}>
-            <Component />
+        {isEditing
+            ? backgroundCells.map(({ column, row }) => (
+              <button
+                className={getCardDragStateClassNames({
+                  isActiveSlot: isActiveGridSlot(activeSlot, column, row),
+                  isDragged: false
+                }).slotClassName}
+                data-slot="true"
+                key={`cell-${column}-${row}`}
+                onDragEnter={() => {
+                  if (draggedCardId) {
+                    setActiveSlot({ column, row });
+                    moveCard(draggedCardId, column, row);
+                  }
+                }}
+                onDragLeave={() => {
+                  if (isActiveGridSlot(activeSlot, column, row)) {
+                    setActiveSlot(null);
+                  }
+                }}
+                onDragOver={(event) => {
+                  if (draggedCardId) {
+                    event.preventDefault();
+                  }
+                }}
+                style={{ gridColumn: `${column + 1} / span 1`, gridRow: `${row + 1} / span 1` }}
+                type="button"
+              />
+            ))
+          : null}
+        {positionedCards.map(({ Component, column, footprint, id, row }) => {
+          const { columns, rows } = getFootprintDimensions(footprint);
+
+          return (
+          <div className={getCardDragStateClassNames({ isActiveSlot: false, isDragged: draggedCardId === id }).cardClassName} key={id} ref={(element) => {
+            if (element) {
+              cardRefs.current.set(id, element);
+            } else {
+              cardRefs.current.delete(id);
+            }
+          }} style={{ gridColumn: `${column + 1} / span ${columns}`, gridRow: `${row + 1} / span ${rows}`, zIndex: draggedCardId === id ? 2 : 1 }}>
+            <CardEditChrome
+              allowedFootprints={cardBehaviorConstants[id]?.allowedFootprints ?? [footprint]}
+              cardId={id}
+              footprint={footprint}
+              isDragging={draggedCardId === id}
+              isEditing={isEditing}
+              onDragEnd={() => {
+                setDraggedCardId(null);
+                setActiveSlot(null);
+              }}
+              onDragEnter={() => {
+                if (!draggedCardId || draggedCardId === id) {
+                  return;
+                }
+
+                setActiveSlot({ column, row });
+                moveCard(draggedCardId, column, row);
+              }}
+              onDragStart={(cardId) => {
+                setDraggedCardId(cardId);
+                setActiveSlot({ column, row });
+              }}
+              onResize={(nextFootprint) => resizeCard(id, nextFootprint)}
+            >
+              <Component footprint={footprint} />
+            </CardEditChrome>
           </div>
-        ))}
+        );})}
       </section>
     </div>
   );

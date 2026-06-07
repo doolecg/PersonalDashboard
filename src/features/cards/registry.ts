@@ -1,6 +1,4 @@
 import type { CardDefinition } from "./types";
-import { ExampleCard } from "./example/ExampleCard";
-import { HourlyForecastCard } from "./weather/HourlyForecastCard";
 import { PrecipitationCard } from "./weather/PrecipitationCard";
 import { TenDayForecastCard } from "./weather/TenDayForecastCard";
 import { WeatherCard } from "./weather/WeatherCard";
@@ -20,13 +18,6 @@ export const cardRegistry: CardDefinition[] = [
     description: "Short-term rain outlook.",
     footprint: "2x1",
     Component: PrecipitationCard
-  },
-  {
-    id: "weather-hourly",
-    title: "Hourly Forecast",
-    description: "24-hour temperature and precipitation.",
-    footprint: "2x1",
-    Component: HourlyForecastCard
   },
   {
     id: "weather-ten-day",

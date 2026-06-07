@@ -1,11 +1,13 @@
 import { startTransition, useEffect, useState } from "react";
 import { getWeatherData } from "@/app/apiClient";
 import type { WeatherWidgetPayload } from "./types";
+import { resolveWeatherPayload, type WeatherDevScenario } from "./devWeatherScenarios";
 
 type WeatherState = {
   data: WeatherWidgetPayload | null;
   error: string | null;
   loading: boolean;
+  scenario: WeatherDevScenario;
 };
 
 const weatherStore: WeatherState & {
@@ -15,6 +17,7 @@ const weatherStore: WeatherState & {
   data: null,
   error: null,
   loading: true,
+  scenario: "live",
   promise: null,
   listeners: new Set()
 };
@@ -44,11 +47,17 @@ async function loadWeather() {
   return weatherStore.promise;
 }
 
+export function setWeatherDevScenario(scenario: WeatherDevScenario) {
+  weatherStore.scenario = scenario;
+  emitWeatherChange();
+}
+
 export function useWeatherData() {
   const [state, setState] = useState<WeatherState>({
     data: weatherStore.data,
     error: weatherStore.error,
-    loading: weatherStore.loading
+    loading: weatherStore.loading,
+    scenario: weatherStore.scenario
   });
 
   useEffect(() => {
@@ -57,7 +66,8 @@ export function useWeatherData() {
         setState({
           data: weatherStore.data,
           error: weatherStore.error,
-          loading: weatherStore.loading
+          loading: weatherStore.loading,
+          scenario: weatherStore.scenario
         });
       });
     };
@@ -72,9 +82,11 @@ export function useWeatherData() {
 
   return {
     ...state,
+    data: resolveWeatherPayload({ isDev: import.meta.env.DEV, livePayload: state.data, scenario: state.scenario }),
     refresh: async () => {
       weatherStore.promise = null;
       await loadWeather();
-    }
+    },
+    setScenario: setWeatherDevScenario
   };
 }

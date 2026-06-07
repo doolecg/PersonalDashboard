@@ -181,3 +181,13 @@ textarea {
 .shell-ticker-track {
   animation: shell-ticker-scroll var(--shell-ticker-duration, 48s) linear infinite;
 }
+
+@keyframes card-jiggle {
+  from {
+    transform: translateY(-0.5px) rotate(-0.22deg);
+  }
+
+  to {
+    transform: translateY(0.5px) rotate(0.22deg);
+  }
+}
