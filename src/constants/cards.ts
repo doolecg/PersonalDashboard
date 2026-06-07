@@ -17,5 +17,8 @@ export const cardBehaviorConstants: Record<string, CardBehavior> = {
   "weather-hourly": { allowedFootprints: ["2x1", "2x2", "4x2"], defaultVisibleHours: 12 },
   "weather-ten-day": { allowedFootprints: ["1x1", "2x1", "2x2", "4x2"], defaultVisibleDays: 4 },
   "weather-map": { allowedFootprints: ["2x1", "2x2", "4x2", "4x4"] },
-  "weather-details": { allowedFootprints: ["1x1", "2x1"] }
+  "weather-details": { allowedFootprints: ["1x1", "2x1"] },
+  "notes": { allowedFootprints: ["2x1", "2x2", "1x2", "4x2", "4x4"] },
+  "todo": { allowedFootprints: ["2x1", "2x2", "1x2", "4x2", "4x4"] },
+  "reminders": { allowedFootprints: ["2x1", "2x2", "1x2", "4x2"] }
 };

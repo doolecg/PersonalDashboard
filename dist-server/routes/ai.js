@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { runAssistant } from "../ai/assistant.js";
+import { generateLifeSummary } from "../ai/lifeSummary.js";
+import { getNewsSummary } from "../ai/newsSummary.js";
 import { redactContextForPrompt } from "../ai/redactContext.js";
 import { env } from "../env.js";
 import { logger } from "../logger.js";
 import { messagesFromPrompt } from "../providers/aiProvider.js";
-import { getAiStatus, isAiRoutingMode, routeAiComplete, routeAiStream, setAiRoutingMode } from "../providers/aiRuntime.js";
+import { getAiStatus, isAiRoutingMode, routeAiComplete, routeAiStream, setAiSelection } from "../providers/aiRuntime.js";
 export const aiRouter = Router();
 function requestFromBody(body, fallbackPrompt) {
     const value = body;
@@ -57,11 +59,40 @@ aiRouter.post("/stream", async (req, res) => {
 aiRouter.get("/status", (_req, res) => {
     res.json(getAiStatus());
 });
+aiRouter.get("/news-summary", async (_req, res) => {
+    try {
+        res.json(await getNewsSummary());
+    }
+    catch (error) {
+        logger.error("AI news summary failed", error, { route: "/api/ai/news-summary" });
+        res.status(503).json({ message: error instanceof Error ? error.message : "News summary unavailable" });
+    }
+});
+aiRouter.post("/life-summary", async (req, res) => {
+    try {
+        const body = req.body;
+        const events = Array.isArray(body.events) ? body.events : [];
+        res.json(await generateLifeSummary(events, typeof body.weather === "string" ? body.weather : undefined));
+    }
+    catch (error) {
+        logger.error("AI life summary failed", error, { route: "/api/ai/life-summary" });
+        res.status(503).json({ message: error instanceof Error ? error.message : "Life summary unavailable" });
+    }
+});
 aiRouter.patch("/status", (req, res) => {
-    const mode = req.body?.mode;
-    if (!isAiRoutingMode(mode))
+    const body = (req.body ?? {});
+    const hasMode = body.mode !== undefined;
+    const hasModel = body.model !== undefined;
+    if (hasMode && !isAiRoutingMode(body.mode)) {
         return res.status(400).json({ message: "Invalid AI routing mode." });
-    setAiRoutingMode(mode);
+    }
+    if (hasModel && body.model !== null && typeof body.model !== "string") {
+        return res.status(400).json({ message: "Invalid model." });
+    }
+    setAiSelection({
+        mode: hasMode ? body.mode : undefined,
+        model: hasModel ? body.model : undefined
+    });
     res.json(getAiStatus());
 });
 const assistantRoles = new Set(["system", "user", "assistant"]);

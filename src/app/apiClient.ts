@@ -27,12 +27,16 @@ export async function getAiStatus(): Promise<AiUsageSnapshot> {
 }
 
 export async function setAiMode(mode: AiRoutingMode): Promise<AiUsageSnapshot> {
+  return setAiSelection({ mode });
+}
+
+export async function setAiSelection(selection: { mode?: AiRoutingMode; model?: string | null }): Promise<AiUsageSnapshot> {
   const response = await fetch("/api/ai/status", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ mode })
+    body: JSON.stringify(selection)
   });
-  if (!response.ok) throw new Error(`AI mode failed with ${response.status}`);
+  if (!response.ok) throw new Error(`AI selection failed with ${response.status}`);
   return response.json() as Promise<AiUsageSnapshot>;
 }
 
@@ -55,3 +59,143 @@ export async function geocodeLocation(query: string): Promise<GeocodeLocationRes
   const payload = (await response.json()) as { results?: GeocodeLocationResult[] };
   return payload.results ?? [];
 }
+
+export type Note = { id: string; text: string; updatedAt: string; title?: string; color?: string };
+export type Todo = { id: string; text: string; done: boolean; createdAt: string };
+export type Reminder = { id: string; text: string; due?: string; done: boolean };
+
+async function getCollection<T>(name: string): Promise<T[]> {
+  const response = await fetch(`/api/${name}`);
+  if (!response.ok) throw new Error(`Failed to load ${name} (${response.status})`);
+  const payload = (await response.json()) as { items?: T[] };
+  return payload.items ?? [];
+}
+
+async function saveCollection<T>(name: string, items: T[]): Promise<T[]> {
+  const response = await fetch(`/api/${name}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items })
+  });
+  if (!response.ok) throw new Error(`Failed to save ${name} (${response.status})`);
+  const payload = (await response.json()) as { items?: T[] };
+  return payload.items ?? items;
+}
+
+export type AssistantChatMessage = { role: "user" | "assistant"; content: string };
+export type AssistantResult = { reply: string; toolCalls: Array<{ name: string }> };
+
+export async function sendAssistantMessage(
+  messages: AssistantChatMessage[],
+  context?: Record<string, unknown>
+): Promise<AssistantResult> {
+  const response = await fetch("/api/ai/assistant", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages, context })
+  });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as { message?: string };
+    throw new Error(payload.message ?? `Assistant failed with ${response.status}`);
+  }
+  return response.json() as Promise<AssistantResult>;
+}
+
+export type NewsHeadline = { source: string; title: string; url: string };
+export type NewsSummary = { summary: string; headlines: NewsHeadline[]; source: "ai" | "headlines" };
+
+export async function getNewsSummary(): Promise<NewsSummary> {
+  const response = await fetch("/api/ai/news-summary");
+  if (!response.ok) throw new Error(`News summary failed with ${response.status}`);
+  return response.json() as Promise<NewsSummary>;
+}
+
+export type LifeSummaryEvent = { title: string; start: string; end?: string; location?: string; category?: string };
+export type LifeSummary = { summary: string; source: "ai" | "fallback" };
+
+export async function getLifeSummary(events: LifeSummaryEvent[], weather?: string): Promise<LifeSummary> {
+  const response = await fetch("/api/ai/life-summary", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ events, weather })
+  });
+  if (!response.ok) throw new Error(`Life summary failed with ${response.status}`);
+  return response.json() as Promise<LifeSummary>;
+}
+
+export type SecretStatus = { set: boolean; preview: string };
+export type SecretsStatus = Record<string, SecretStatus>;
+
+export async function getSecrets(): Promise<SecretsStatus> {
+  const response = await fetch("/api/settings/secrets");
+  if (!response.ok) throw new Error(`Failed to load settings (${response.status})`);
+  const payload = (await response.json()) as { secrets?: SecretsStatus };
+  return payload.secrets ?? {};
+}
+
+export async function updateSecrets(patch: Record<string, string>): Promise<SecretsStatus> {
+  const response = await fetch("/api/settings/secrets", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch)
+  });
+  if (!response.ok) throw new Error(`Failed to save settings (${response.status})`);
+  const payload = (await response.json()) as { secrets?: SecretsStatus };
+  return payload.secrets ?? {};
+}
+
+export type ServerConfig = { localAiBaseUrl: string; localAiModel: string };
+
+export async function getServerConfig(): Promise<ServerConfig> {
+  const response = await fetch("/api/settings/config");
+  if (!response.ok) throw new Error(`Failed to load config (${response.status})`);
+  const payload = (await response.json()) as { config?: ServerConfig };
+  return payload.config ?? { localAiBaseUrl: "", localAiModel: "" };
+}
+
+export async function updateServerConfig(patch: Partial<ServerConfig>): Promise<ServerConfig> {
+  const response = await fetch("/api/settings/config", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch)
+  });
+  if (!response.ok) throw new Error(`Failed to save config (${response.status})`);
+  const payload = (await response.json()) as { config?: ServerConfig };
+  return payload.config ?? { localAiBaseUrl: "", localAiModel: "" };
+}
+
+export type GoogleStatus = { configured: boolean; connected: boolean };
+
+export async function getGoogleStatus(): Promise<GoogleStatus> {
+  const response = await fetch("/api/google/status");
+  if (!response.ok) throw new Error(`Google status failed (${response.status})`);
+  return response.json() as Promise<GoogleStatus>;
+}
+
+export async function disconnectGoogle(): Promise<void> {
+  await fetch("/api/google/disconnect", { method: "POST" });
+}
+
+export type CalendarEventDTO = {
+  id: string;
+  title: string;
+  start: string;
+  end?: string;
+  location?: string;
+  description?: string;
+  category?: string;
+};
+
+export async function getGoogleEvents(): Promise<CalendarEventDTO[]> {
+  const response = await fetch("/api/google/events");
+  if (!response.ok) throw new Error(`Google events failed (${response.status})`);
+  const payload = (await response.json()) as { events?: CalendarEventDTO[] };
+  return payload.events ?? [];
+}
+
+export const getNotes = () => getCollection<Note>("notes");
+export const saveNotes = (items: Note[]) => saveCollection("notes", items);
+export const getTodos = () => getCollection<Todo>("todos");
+export const saveTodos = (items: Todo[]) => saveCollection("todos", items);
+export const getReminders = () => getCollection<Reminder>("reminders");
+export const saveReminders = (items: Reminder[]) => saveCollection("reminders", items);

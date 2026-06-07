@@ -2,6 +2,9 @@ import type { CardDefinition } from "./types";
 import { CalendarMonthCard } from "./calendar/CalendarMonthCard";
 import { CalendarPlannerCard } from "./calendar/CalendarPlannerCard";
 import { UpcomingEventsCard } from "./calendar/UpcomingEventsCard";
+import { NotesCard } from "./notes/NotesCard";
+import { RemindersCard } from "./reminders/RemindersCard";
+import { TodoCard } from "./todo/TodoCard";
 import { AiWeatherReportCard } from "./weather/AiWeatherReportCard";
 import { HourlyForecastCard } from "./weather/HourlyForecastCard";
 import { PrecipitationCard } from "./weather/PrecipitationCard";
@@ -88,5 +91,30 @@ export const cardRegistry: CardDefinition[] = [
     description: "Current weather metrics.",
     footprint: "1x1",
     Component: WeatherDetailsCard
+  },
+  {
+    id: "notes",
+    title: "Notes",
+    description: "A quick free-form notepad.",
+    footprint: "2x2",
+    Component: NotesCard
+  },
+  {
+    id: "todo",
+    title: "To-do",
+    description: "A simple task checklist.",
+    footprint: "2x2",
+    Component: TodoCard
+  },
+  {
+    id: "reminders",
+    title: "Reminders",
+    description: "Time-based reminders.",
+    footprint: "2x1",
+    Component: RemindersCard
   }
 ];
+
+export const cardsById: Record<string, CardDefinition> = Object.fromEntries(
+  cardRegistry.map((card) => [card.id, card])
+);

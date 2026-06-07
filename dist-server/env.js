@@ -10,6 +10,7 @@ const numberFromEnv = (key, fallback) => {
 export const env = {
     port: numberFromEnv("PORT", 8080),
     nodeEnv: process.env.NODE_ENV ?? "development",
+    dataDir: process.env.DATA_DIR ?? "./data",
     defaultCity: process.env.DEFAULT_CITY ?? "Local",
     defaultLat: numberFromEnv("DEFAULT_LAT", 53.373),
     defaultLon: numberFromEnv("DEFAULT_LON", -3.016),
@@ -47,5 +48,9 @@ export const env = {
     ollamaBaseUrl: process.env.OLLAMA_BASE_URL ?? "http://localhost:11434",
     ollamaModel: process.env.OLLAMA_MODEL ?? "qwen3:1.7b",
     openAiCompatBaseUrl: process.env.OPENAI_COMPAT_BASE_URL ?? "http://localhost:8081/v1",
-    openAiCompatModel: process.env.OPENAI_COMPAT_MODEL ?? "local-model"
+    openAiCompatModel: process.env.OPENAI_COMPAT_MODEL ?? "local-model",
+    googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
+    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+    googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? "http://localhost:8080/api/google/callback",
+    googleCalendarId: process.env.GOOGLE_CALENDAR_ID ?? "primary"
 };

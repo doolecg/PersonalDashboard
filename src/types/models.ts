@@ -15,6 +15,7 @@ export type AiRouteAttempt = {
 
 export type AiUsageSnapshot = {
   mode: AiRoutingMode;
+  selectedModel: string | null;
   activeProvider: string;
   activeModel: string;
   requests: number;
@@ -26,5 +27,6 @@ export type AiUsageSnapshot = {
   lastAttempts: AiRouteAttempt[];
   availableModes: AiRoutingMode[];
   openRouterModels: string[];
+  providerModels: Partial<Record<AiRoutingMode, string[]>>;
   updatedAt: string;
 };

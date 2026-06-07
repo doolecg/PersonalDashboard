@@ -5,8 +5,47 @@ import { llamaCppOpenAiProvider } from "../adapters/llamaCppOpenAiProvider.js";
 import { ollamaProvider } from "../adapters/ollamaProvider.js";
 import { env } from "../env.js";
 import { logger } from "../logger.js";
+import { readObject, writeObject } from "../store/collectionStore.js";
 const modes = ["auto", "openrouter", "gemini", "openai", "local"];
 let currentMode = modes.includes(env.aiRoutingMode) ? env.aiRoutingMode : "auto";
+// A specific model the user pinned in Settings (provider inferred from the mode).
+// null = let the mode pick (auto tries everything).
+let selectedModel = null;
+const selectionStore = "ai-selection";
+// The models the Settings picker can offer per provider.
+function providerModels() {
+    return {
+        openrouter: env.openRouterFreeModels,
+        openai: [env.openAiModel],
+        gemini: [env.geminiModel],
+        local: [env.ollamaModel, env.openAiCompatModel]
+    };
+}
+// Build a single attempt for a pinned model, inferring the provider from the mode
+// (auto pins to OpenRouter, where the selectable free-model list lives).
+function pinnedAttempt(mode, model) {
+    if (mode === "gemini")
+        return attempt("gemini", model, createGeminiProvider(model));
+    if (mode === "openai")
+        return attempt("openai", model, createOpenAiProvider(model));
+    if (mode === "local") {
+        return model === env.openAiCompatModel
+            ? attempt("openai-compatible", model, llamaCppOpenAiProvider)
+            : attempt("ollama", model, ollamaProvider);
+    }
+    return attempt("openrouter", model, createOpenRouterProvider(model));
+}
+export async function applyStoredAiSelection() {
+    const stored = await readObject(selectionStore);
+    if (!stored)
+        return;
+    if (stored.mode && modes.includes(stored.mode))
+        currentMode = stored.mode;
+    selectedModel = typeof stored.model === "string" && stored.model ? stored.model : null;
+}
+function persistAiSelection() {
+    void writeObject(selectionStore, { mode: currentMode, model: selectedModel }).catch(() => undefined);
+}
 const usage = {
     activeProvider: "none",
     activeModel: "none",
@@ -44,12 +83,14 @@ function attempt(providerName, model, provider) {
     return { provider, providerName, model };
 }
 function localAttempts() {
+    // OpenAI-compatible first — it's the user-configurable local server URL
+    // (LM Studio / llama.cpp), then Ollama on its native endpoint.
     return [
-        attempt("ollama", env.ollamaModel, ollamaProvider),
-        attempt("openai-compatible", env.openAiCompatModel, llamaCppOpenAiProvider)
+        attempt("openai-compatible", env.openAiCompatModel, llamaCppOpenAiProvider),
+        attempt("ollama", env.ollamaModel, ollamaProvider)
     ];
 }
-function attemptsForMode(mode) {
+function baseAttemptsForMode(mode) {
     if (mode === "local")
         return localAttempts();
     if (mode === "gemini")
@@ -66,6 +107,14 @@ function attemptsForMode(mode) {
         ...localAttempts()
     ];
 }
+function attemptsForMode(mode) {
+    const base = baseAttemptsForMode(mode);
+    if (!selectedModel)
+        return base;
+    // Try the pinned model first, then fall back to the rest so a single dead free
+    // model doesn't take the assistant down.
+    return [pinnedAttempt(mode, selectedModel), ...base.filter((candidate) => candidate.model !== selectedModel)];
+}
 function canSkipProvider(error) {
     return /authentication failed|api_key is not configured/i.test(error.message);
 }
@@ -75,6 +124,7 @@ function fallbackAttempts() {
 export function getAiStatus() {
     return {
         mode: currentMode,
+        selectedModel,
         activeProvider: usage.activeProvider,
         activeModel: usage.activeModel,
         requests: usage.requests,
@@ -86,12 +136,24 @@ export function getAiStatus() {
         lastAttempts: usage.lastAttempts,
         availableModes: modes,
         openRouterModels: env.openRouterFreeModels,
+        providerModels: providerModels(),
         updatedAt: usage.updatedAt
     };
 }
 export function setAiRoutingMode(mode) {
     currentMode = mode;
     usage.updatedAt = new Date().toISOString();
+    persistAiSelection();
+}
+// Set the routing mode (provider) and/or a pinned model. Passing model === null
+// clears the pin; an unset model leaves the current pin untouched.
+export function setAiSelection({ mode, model }) {
+    if (mode && modes.includes(mode))
+        currentMode = mode;
+    if (model !== undefined)
+        selectedModel = typeof model === "string" && model ? model : null;
+    usage.updatedAt = new Date().toISOString();
+    persistAiSelection();
 }
 export function isAiRoutingMode(value) {
     return typeof value === "string" && modes.includes(value);

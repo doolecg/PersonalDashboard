@@ -13,7 +13,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { dashboardIds, dashboardLabels, type DashboardId } from "@/features/dashboards/dashboards";
 import { readImageFile } from "./imageFile";
+import { LocalAiSettings } from "./LocalAiSettings";
+import { ModelSettings } from "./ModelSettings";
+import { SecretsSettings } from "./SecretsSettings";
 
 const layoutStorageKey = "dashboard-card-layout";
 export const settingsDialogContentClassName = "dark max-h-[85vh] overflow-y-auto bg-background/95 text-foreground";
@@ -23,6 +27,8 @@ type SettingsDialogProps = {
   onOpenChange: (open: boolean) => void;
   isEditingCards: boolean;
   onToggleEditingCards: () => void;
+  activeDashboard: DashboardId;
+  onSelectDashboard: (dashboard: DashboardId) => void;
 };
 
 function resetLayout() {
@@ -39,6 +45,8 @@ export function SettingsDialog({
   onOpenChange,
   isEditingCards,
   onToggleEditingCards,
+  activeDashboard,
+  onSelectDashboard,
 }: SettingsDialogProps) {
   const preferences = usePreferences();
 
@@ -142,6 +150,33 @@ export function SettingsDialog({
 
           <SettingRow
             icon={<LayoutGrid className="h-4 w-4" />}
+            title="Dashboard"
+            description="Switch dashboards now, and set which one loads by default."
+          >
+            <div className="flex items-center gap-1 rounded-2xl border border-border/60 bg-background/40 p-1">
+              {dashboardIds.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={activeDashboard === id}
+                  onClick={() => {
+                    onSelectDashboard(id);
+                    setPreference("defaultDashboard", id);
+                  }}
+                  className={`rounded-xl px-3 py-1.5 text-sm font-medium transition ${
+                    activeDashboard === id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {dashboardLabels[id]}
+                </button>
+              ))}
+            </div>
+          </SettingRow>
+
+          <SettingRow
+            icon={<LayoutGrid className="h-4 w-4" />}
             title="Edit dashboard layout"
             description="Drag, resize and reorder cards on the grid."
           >
@@ -161,6 +196,10 @@ export function SettingsDialog({
               Reset
             </Button>
           </SettingRow>
+
+          <ModelSettings />
+          <LocalAiSettings />
+          <SecretsSettings />
         </div>
       </DialogContent>
     </Dialog>

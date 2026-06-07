@@ -1,5 +1,6 @@
 import { env } from "../env.js";
 import { logger } from "../logger.js";
+import { getAiStatus, routeAiComplete } from "../providers/aiRuntime.js";
 import { getAssistantTool, toolSpecsForOpenAi } from "./tools/registry.js";
 const systemPrompt = "You are Aura, a helpful personal-dashboard assistant. You can call the provided tools to fetch live information (such as weather) before answering. Be concise and friendly. If a tool returns an error, explain it plainly to the user.";
 const maxToolRounds = 4;
@@ -52,7 +53,29 @@ function parseArgs(raw) {
         return {};
     }
 }
+// Use OpenAI function-calling only when OpenAI is the chosen provider — other
+// providers (OpenRouter free models, local LM Studio, etc.) don't support it,
+// so we route a plain completion through the selected model instead.
 export async function runAssistant(history, contextText) {
+    const useOpenAiTools = getAiStatus().mode === "openai" && Boolean(env.openAiApiKey);
+    if (useOpenAiTools) {
+        try {
+            return await runWithOpenAiTools(history, contextText);
+        }
+        catch (error) {
+            logger.warn("Assistant OpenAI tool loop failed; falling back to routed completion", {
+                message: error instanceof Error ? error.message : String(error)
+            });
+        }
+    }
+    const systemContent = contextText ? `${systemPrompt}\n\nDashboard context: ${contextText}` : systemPrompt;
+    const result = await routeAiComplete({
+        messages: [{ role: "system", content: systemContent }, ...history],
+        maxTokens: 700
+    });
+    return { reply: result.message.trim() || "I'm not sure how to answer that.", toolCalls: [] };
+}
+async function runWithOpenAiTools(history, contextText) {
     const messages = [
         { role: "system", content: contextText ? `${systemPrompt}\n\nDashboard context: ${contextText}` : systemPrompt },
         ...history.map((message) => ({ role: message.role, content: message.content }))

@@ -1,3 +1,5 @@
+import type { DashboardId } from "@/features/dashboards/dashboards";
+
 export type DashboardLocation = {
   name: string;
   latitude: number;
@@ -12,6 +14,7 @@ export type DashboardPreferences = {
   showBackground: boolean;
   showTicker: boolean;
   location: DashboardLocation | null;
+  defaultDashboard: DashboardId;
 };
 
 export const defaultPreferences: DashboardPreferences = {
@@ -21,7 +24,8 @@ export const defaultPreferences: DashboardPreferences = {
   clock24h: true,
   showBackground: true,
   showTicker: true,
-  location: null
+  location: null,
+  defaultDashboard: "home"
 };
 
 export function getDashboardLocationKey(location: DashboardLocation | null): string {

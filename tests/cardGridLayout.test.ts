@@ -4,8 +4,8 @@ import { getBoardRowCount, getFootprintDimensions, getWidgetBoardMetrics } from 
 
 describe("card grid layout", () => {
   it("packs the current registry into fewer rows on denser boards", () => {
-    expect(getBoardRowCount(cardRegistry, 4)).toBe(10);
-    expect(getBoardRowCount(cardRegistry, 6)).toBe(7);
+    expect(getBoardRowCount(cardRegistry, 4)).toBe(12);
+    expect(getBoardRowCount(cardRegistry, 6)).toBe(8);
   });
 
   it("uses the configured widget unit instead of shrinking from card count", () => {
