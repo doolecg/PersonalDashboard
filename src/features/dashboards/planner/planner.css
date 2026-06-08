@@ -1985,6 +1985,32 @@
   opacity: 1;
   pointer-events: auto;
 }
+.planner .ai-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 24px;
+  cursor: nw-resize;
+  border-radius: 22px 0 0 0;
+  z-index: 1;
+  touch-action: none;
+}
+.planner .ai-resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 9px;
+  height: 9px;
+  border-top: 2px solid rgba(255, 255, 255, 0.2);
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1px 0 0 0;
+  transition: border-color 0.15s;
+}
+.planner .ai-resize-handle:hover::before {
+  border-color: rgba(255, 255, 255, 0.5);
+}
 .planner .ai-close {
   display: grid;
   place-items: center;

@@ -34,6 +34,7 @@ export const env = {
   openRouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
   openRouterBaseUrl: process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
   openRouterModel: process.env.OPENROUTER_MODEL ?? "google/gemma-4-31b-it:free",
+  assistantModel: process.env.ASSISTANT_MODEL ?? "openai/gpt-4o-mini",
   openRouterFreeModels: (process.env.OPENROUTER_FREE_MODELS ?? [
     "google/gemma-4-31b-it:free",
     "google/gemma-4-26b-a4b-it:free",

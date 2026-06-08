@@ -66,8 +66,8 @@ function resolveToolEndpoint(): ToolEndpoint | null {
   }
 
   if (wantOpenRouter && env.openRouterApiKey) {
-    const { selectedModel } = getAiStatus();
-    const model = selectedModel || env.openRouterFreeModels[0] || env.openRouterModel;
+    // Use a dedicated assistant model rather than the free chat rotation — most
+    // free models silently ignore the tools parameter and never call functions.
     return {
       url: `${env.openRouterBaseUrl}/chat/completions`,
       headers: {
@@ -76,7 +76,7 @@ function resolveToolEndpoint(): ToolEndpoint | null {
         "HTTP-Referer": env.openRouterSiteUrl,
         "X-OpenRouter-Title": env.openRouterAppName
       },
-      model,
+      model: env.assistantModel,
       provider: "openrouter"
     };
   }
