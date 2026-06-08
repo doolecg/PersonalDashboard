@@ -12,8 +12,8 @@ export type TechSummary = {
 const ttlMs = 15 * 60 * 1000;
 let cache: { at: number; data: TechSummary } | null = null;
 
-export async function getTechSummary(): Promise<TechSummary> {
-  if (cache && Date.now() - cache.at < ttlMs) return cache.data;
+export async function getTechSummary(force = false): Promise<TechSummary> {
+  if (!force && cache && Date.now() - cache.at < ttlMs) return cache.data;
 
   const items = await resolveTickerItems({
     footerTickerItems: "",

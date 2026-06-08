@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 "Aura" — a calm, Apple/visionOS-inspired personal dashboard. Vite + React 19 + TypeScript frontend, Express backend, served from a single origin (intended for Raspberry Pi / PC behind a Cloudflare Tunnel). `SPEC.md` is the original product brief; the codebase has since diverged from it (see "Reality vs. SPEC" below) — trust the code over the spec.
 
+## Trust These Sources First
+
+- **SPEC.md is stale.** The shipped app uses Tailwind CSS v4 (`@tailwindcss/vite`), shadcn config in `components.json`, and Geist typography. Do not follow the SPEC's "no Tailwind" rule or other structural guidance.
+- **Styling:** SCSS is allowed when it's the clearest fit; do not assume the repo is CSS-only because the SPEC says so.
+- **Source of truth:** `package.json`, `server/*.ts`, `src/features/cards/README.md`, and the tests are authoritative. The SPEC is reference only.
+
 ## Commands
 
 ```bash
@@ -21,6 +27,16 @@ Watch a test: `npx vitest tests/cardGridLayout.test.ts`
 
 There is **no lint step**. `npm run typecheck` is the correctness gate and must cover both tsconfigs. Dev runs everything on one process — there is no separate Vite dev server; Express embeds Vite in middleware mode (`server/index.ts`).
 
+## Environment Setup
+
+Copy `.env.example` to `.env` and fill in the provider keys you want to use:
+- **AI providers:** `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` (at least one for AI features)
+- **Local AI:** `OPENAI_COMPATIBLE_BASE_URL` + `OPENAI_COMPATIBLE_MODEL` (Ollama, llama.cpp, etc.)
+- **Google Calendar:** `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` (optional; enables OAuth flow)
+- **Other:** `WEATHER_PROVIDER` (preset; don't change), `PORT` (default 8080)
+
+Runtime overrides (secrets, local-AI config) can be edited in Settings UI and are persisted under `./data/` — they take precedence over `.env`. Rotating a key in the UI clears the override, falling back to `.env`.
+
 ## Architecture
 
 Two TypeScript projects with separate configs, both `strict`:
@@ -28,32 +44,44 @@ Two TypeScript projects with separate configs, both `strict`:
 - **`server/`** (`tsconfig.server.json`) — Node ESM. `moduleResolution: NodeNext`, so **relative imports must carry `.js` extensions** (e.g. `import { env } from "./env.js"`) even though the source is `.ts`. Match this convention.
 
 ### Backend (`server/`)
-`server/index.ts` mounts routers under `/api`: `/api/shell`, `/api/ai`, `/api/weather`, `/api/log`, plus `/api/healthz`. In dev it attaches Vite middleware and serves `index.html`; in production it serves `dist/` static files with SPA fallback.
+`server/index.ts` mounts routers under `/api`: `/api/shell`, `/api/ai`, `/api/weather`, `/api/log`, `/api/notes`, `/api/todos`, `/api/reminders`, `/api/settings`, `/api/google`, plus `/api/healthz`. In dev it attaches Vite middleware and serves `index.html`; in production it serves `dist/` static files with SPA fallback. On boot it awaits `applyStoredSecrets()` → `applyServerConfig()` → `applyStoredAiSelection()` to layer user-set overrides over `.env` before listening.
 
-- **Config**: `server/env.ts` reads all env vars through `dotenv` into a single typed `env` object. Add new config here, never read `process.env` elsewhere.
+- **Config**: `server/env.ts` reads all env vars through `dotenv` into a single typed `env` object. Add new config here, never read `process.env` elsewhere. Note `env` is *mutable*: the runtime-override layer (below) writes back onto its fields.
+- **Runtime overrides** (`server/secrets.ts`, `server/serverConfig.ts`): a subset of config can be edited at runtime from the Settings UI and is persisted to JSON under `env.dataDir` (`./data`), then layered over the `.env` defaults at startup. `secrets.ts` covers API keys (`openRouterApiKey`, `openAiApiKey`, `geminiApiKey`, `googleClientId`, `googleClientSecret`) — exposed only as masked status, never returned in full. `serverConfig.ts` covers non-secret local-AI settings (`localAiBaseUrl`/`localAiModel` → `openAiCompat*`). Both mutate `env` in place so adapters that read lazily pick up changes immediately; an empty value clears the override and reverts to `.env`. To make a new field user-editable, add it to `secretFields` or `configFields` — the `/api/settings` routes iterate those lists generically.
+- **Persistence** (`server/store/collectionStore.ts`): there is no database. Small single-user data lives as JSON files under `env.dataDir` — list collections via `readCollection`/`writeCollection` (notes, todos, reminders) and single objects via `readObject`/`writeObject`/`deleteObject` (secrets, server-config, Google OAuth tokens). Writes are atomic (temp file + rename); collection names are charset-restricted to block path traversal.
+- **Collections API** (`server/routes/collections.ts`): `createCollectionRouter(name)` builds an identical `GET /` (whole list) + `PUT /` (replace list wholesale) router; `notes`/`todos`/`reminders` are just three mounts of it. The client owns the list shape and round-trips it entirely.
+- **Google Calendar** (`server/google/`, `server/routes/google.ts`): optional OAuth integration. `/api/google/auth` → consent redirect, `/callback` exchanges the code and stores tokens via the object store, `/status` reports configured/connected, `/events` lists upcoming calendar events. Gated on `googleClientId`/`googleClientSecret` (settable at runtime).
 - **Weather** (`server/weather/`): an *ensemble* pipeline, not a single provider. `service.ts` fans out to three sources (Open-Meteo UKMO, Met.no, Open-Meteo ICON) via `Promise.allSettled`, normalizes each (`normalize.ts`), merges them (`ensemble.ts`), and shapes a `WeatherWidgetPayload` for the UI (`presentation.ts`). Results cached in-module for 5 minutes; falls back to stale cache on failure. `WEATHER_PROVIDER` env exists but the ensemble path is what runs. `GET /api/weather` accepts `lat`/`lon`/`city` query params (driven by user preferences). `GET /api/weather/geocode?q=` resolves place names via Open-Meteo geocoding (`geocode.ts`). `GET /api/weather/report` produces a short natural-language summary + a deterministic insight line (`report.ts`): it tries OpenAI and falls back to a generated string, cached per forecast refresh.
 - **AI** has two distinct layers — don't conflate them:
   - *Routing/failover* (`server/providers/aiRuntime.ts` + `server/adapters/`): ordered failover across providers. `AI_ROUTING_MODE` (`auto|openrouter|gemini|openai|local`) selects the candidate list; `auto` tries all OpenRouter free models, then Gemini, OpenAI, then local (Ollama, llama.cpp). Tracks usage/token estimates in-module, exposed via `GET/PATCH /api/ai/status`. Backs `POST /api/ai/chat` and streaming `POST /api/ai/stream` (SSE `token`/`done`/`error` events).
   - *Tool-calling assistant* (`server/ai/assistant.ts` + `server/ai/tools/`): a separate OpenAI-only chat loop (`POST /api/ai/assistant`) that runs up to `maxToolRounds` of OpenAI function-calling against the tools in `tools/registry.ts` (currently `weatherTool`). To give the assistant a new capability, add an `AssistantTool` to that registry — no other wiring needed.
-  - Context is redacted before prompting in both paths (`server/ai/redactContext.ts`).
+  - *Canned summaries* (`server/ai/newsSummary.ts`, `server/ai/lifeSummary.ts`): `GET /api/ai/news-summary` and `POST /api/ai/life-summary` (calendar events → a warm plain-language day summary). Both route through the failover runtime and fall back to a deterministic string when no provider is reachable.
+  - Context is redacted before prompting in all paths (`server/ai/redactContext.ts`).
 
 ### Frontend (`src/`)
-`src/App.tsx` is the shell: background layer, `ShellHeader`, a centered `CardGrid`, and a `ShellFooter` ticker.
+`src/App.tsx` switches between two **dashboards** (`src/features/dashboards/dashboards.ts`, ids `"home" | "planner"`, selected via preferences/footer). `home` is the shell: background layer, a centered `CardGrid`, and a `ShellFooter` ticker. `planner` (`src/features/dashboards/planner/`) is a separate, *fixed* bespoke layout (calendar, sticky notes, to-do, AI chat, life summary, weather) — not driven by the card registry. `usePlannerEvents.ts` merges local calendar events with Google Calendar events when connected.
 
-- **Card system** (`src/features/cards/`) is the core abstraction. `registry.ts` lists `CardDefinition`s (id, title, footprint, `Component`). `CardGrid.tsx` renders a real CSS grid with fixed-size square units, drag-to-reorder, resize, and FLIP reorder animations. `useCardLayout.ts` persists per-card position/footprint to `localStorage` (`dashboard-card-layout`) and merges saved layout over the registry via `gridLayout.ts`. Footprints are strings like `"1x1"`, `"2x1"`, `"4x4"`; allowed footprints per card live in `src/constants/cards.ts` (`cardBehaviorConstants`). To add a card: create the component, register it in `registry.ts`, and add its allowed footprints to `cardBehaviorConstants`.
+- **Card system** (`src/features/cards/`) is the core abstraction. `registry.ts` lists `CardDefinition`s (id, title, footprint, `Component`). `CardGrid.tsx` renders a real CSS grid with fixed-size square units, drag-to-reorder, resize, and FLIP reorder animations. `useCardLayout.ts` persists per-card position/footprint to `localStorage` (`dashboard-card-layout`) and merges saved layout over the registry via `gridLayout.ts`. Footprints are strings like `"1x1"`, `"2x1"`, `"4x4"`; allowed footprints per card live in `src/constants/cards.ts` (`cardBehaviorConstants`).
+  - **To add a card:** (1) Create `src/features/cards/<name>/<Name>Card.tsx` exporting a React component. (2) Wrap it in `<DashboardCard>` (provides header, drag handle, footer). (3) Add a hook `src/features/cards/<name>/use<Name>Card.ts` for card-specific logic. (4) Register the card in `src/features/cards/registry.ts` with an id, title, and default footprint. (5) Add allowed footprints to `cardBehaviorConstants` in `src/constants/cards.ts` (e.g. `small: ["1x1", "1x2"]` for a card with id `small`). The card will appear on the home dashboard; planner uses a fixed bespoke layout instead.
+- **Module-level stores** — weather, preferences, and shell config use a shared pattern: a module-level store object with subscriber functions and React hooks that read via `useSyncExternalStore`. Example: `src/app/preferences/preferences.ts` exports `getPreferences()`, `setPreference()`, `subscribePreferences()`, used by the `usePreferences()` hook. This avoids Context overhead and ensures a single fetch even when many cards render. Do not create per-card stores; reuse existing patterns.
 - **Weather cards** (`src/features/cards/weather/`) all read from one shared module-level store in `useWeatherData.ts` (single fetch, listener set) — not React Context. Don't add per-card fetches. The fetch is keyed off the user's selected location from preferences. The AI report/insight cards share `useWeatherReport.ts` similarly.
-- **Calendar cards** (`src/features/cards/calendar/`): month view, upcoming events, and a large planner. Events are stored locally in `localStorage` (`dashboard-calendar-events`) via `useCalendarEvents.ts` — there is no calendar backend.
-- **Preferences** (`src/app/preferences/`): a module-level store (same pattern as weather — `getPreferences`/`setPreference`/`subscribePreferences`, consumed via `usePreferences()` with `useSyncExternalStore`) persisted to `localStorage` (`dashboard-preferences`). Holds display name, profile/background image, 24h clock, ticker/background visibility, and selected `location`. Edited through `src/features/settings/SettingsDialog.tsx`.
-- **Shell** (`src/app/shell/`): `useShellConfig` (user name + ticker from `/api/shell`), `useShellClock`, `useConnectionStatus`. Frontend talks only to `/api/*` via `src/app/apiClient.ts` — never directly to weather/AI providers.
+- **Calendar cards** (`src/features/cards/calendar/`): month view, upcoming events, and a large planner. Local events live in `localStorage` (`dashboard-calendar-events`) via `useCalendarEvents.ts`; `useGoogleEvents.ts` pulls read-only events from the Google Calendar backend when connected. There is no local calendar *write* backend — local events stay in the browser.
+- **Notes / To-do / Reminders cards** (`src/features/cards/{notes,todo,reminders}/`): unlike calendar/weather, these **persist to the server** (`/api/{notes,todos,reminders}`) via `getCollection`/`save*` in `apiClient.ts` — load on mount, optimistic update, then `PUT` the whole list back. Server-backed, single-user, no per-card store.
+- **Preferences** (`src/app/preferences/`): a module-level store (same pattern as weather — `getPreferences`/`setPreference`/`subscribePreferences`, consumed via `usePreferences()` with `useSyncExternalStore`) persisted to `localStorage` (`dashboard-preferences`). Holds display name, profile/background image, 24h clock, ticker/background visibility, selected `location`, and `defaultDashboard`. Edited through `src/features/settings/SettingsDialog.tsx` — which also surfaces server-side settings (API-key secrets, local-AI config, Google connect) via the `/api/settings` and `/api/google` routes.
+- **Shell** (`src/app/shell/`): `useShellConfig` (user name + ticker from `/api/shell`), `useShellClock`, `useConnectionStatus`.
+- **API calls:** Frontend talks only to relative `/api/*` routes via `src/app/apiClient.ts` — never directly to weather/AI providers or with absolute URLs. All API logic (routing, failover, redaction) lives on the backend.
 - **Constants** (`src/constants/`): grid sizing, colors, fonts, motion, card behavior — barrel-exported from `index.ts`. Prefer these over magic numbers.
 - **UI primitives** (`src/components/ui/`): shadcn-style `button`/`card` with `cn()` from `src/lib/utils.ts`. Tailwind v4 (via `@tailwindcss/vite`), dark mode forced (`className="dark"` on root). Note: the SPEC forbids `backdrop-filter` — glass is faked with layered gradients.
 
 ### Tests (`tests/`)
-Vitest with jsdom-style React tests (`.test.tsx`) and pure-logic tests (`.test.ts`). Logic-heavy modules (grid layout, ensemble merge, normalization, news ticker, shell config) are tested directly — keep that separation: put grid/weather/layout math in pure functions so they stay unit-testable apart from components.
+Vitest with jsdom-style React tests (`.test.tsx`) and pure-logic tests (`.test.ts`). Current coverage is lightweight and focused on pure logic:
+- **Worth testing:** grid layout math, weather ensemble merge logic, normalization, news ticker generation, shell config parsing, collection store operations.
+- **Not worth testing:** React component render trees, UI wiring, integration routes (trust the manual flow instead).
+- **Pattern:** Extract logic-heavy code into pure functions in separate files (e.g., `gridLayout.ts`, `ensemble.ts`) and test those directly. Keep components thin and focused on UI. This makes both testing and refactoring straightforward.
 
 ## Reality vs. SPEC
 
-`SPEC.md` describes many widgets (messages, reminders, health, spending, notes) and a `widgets/`+`providers/` layout that **do not exist yet**. What's actually built: the shell (header/clock/footer ticker), the card-grid framework, weather cards end-to-end (including AI-written report/insight cards), local-only calendar cards, a preferences/settings system, and the AI backend (routing + a tool-calling assistant). Default location is Birkenhead (lat 53.373, lon -3.016), not the SPEC's London.
+`SPEC.md` describes a `widgets/`+`providers/` layout that **does not exist** — the real abstraction is the card grid. What's actually built: the shell (clock/footer ticker), the card-grid framework, two dashboards (home + a bespoke planner), weather cards end-to-end (including AI-written report/insight cards), calendar cards (local + optional Google), server-backed notes/todos/reminders, a preferences/settings system with runtime secret & config overrides, optional Google Calendar OAuth, and the AI backend (routing + a tool-calling assistant + canned summaries). Default location is Birkenhead (lat 53.373, lon -3.016), not the SPEC's London.
 
 ## Security note
 

@@ -12,13 +12,16 @@
 - `npm run typecheck` checks both client and server tsconfigs.
 - `npm test` runs Vitest once (`vitest run`).
 - Focused test: `npm test -- tests/cardRegistry.test.ts`
+- No linter or formatter is configured; only TypeScript type-checking (`npm run typecheck`) enforces code quality.
 
 ## Runtime Shape
 - This is one repo and one Node process, not separate frontend/backend apps.
 - Server entrypoint: `server/index.ts`.
 - Client entrypoint: `src/main.tsx`; app root is `src/App.tsx`.
 - In production, Express serves `dist/`; in development, Vite runs in middleware mode inside Express.
-- Browser code should call relative `/api/*` routes only. Current server routes are under `/api/ai`, `/api/log`, and `/api/healthz`.
+- Browser code should call relative `/api/*` routes only. Major groupings: `/api/ai`, `/api/weather`, `/api/notes|todos|reminders|events` (collections), `/api/settings`, `/api/google`, `/api/shell`, `/api/log`, `/api/healthz`.
+- The `@/` import alias maps to `src/` (configured in both tsconfig.json and vite.config.ts).
+- Server code uses ESM (`"type": "module"` in package.json); imports require `.js` extensions (e.g. `from "./env.js"`).
 
 ## AI Wiring
 - Server env is loaded only through `dotenv.config()` in `server/env.ts`; provider secrets belong in `.env`, never in client code.

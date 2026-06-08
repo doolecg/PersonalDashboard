@@ -13,14 +13,15 @@ export type NewsSummary = {
 const ttlMs = 15 * 60 * 1000;
 let cache: { at: number; data: NewsSummary } | null = null;
 
-export async function getNewsSummary(): Promise<NewsSummary> {
-  if (cache && Date.now() - cache.at < ttlMs) return cache.data;
+export async function getNewsSummary(force = false): Promise<NewsSummary> {
+  if (!force && cache && Date.now() - cache.at < ttlMs) return cache.data;
 
-  // Pull every article from every configured RSS feed.
-  const feedsToUse = env.globalNewsRssFeeds || env.newsRssFeeds;
+  // Merge global sources with local NEWS_RSS_FEEDS so Top Stories always has
+  // variety across both national/world feeds and user-configured local feeds.
+  const combined = [env.globalNewsRssFeeds, env.newsRssFeeds].filter(Boolean).join(",");
   const items = await resolveTickerItems({
     footerTickerItems: env.footerTickerItems,
-    newsRssFeeds: feedsToUse
+    newsRssFeeds: combined
   });
   const headlines = items.slice(0, 24);
 

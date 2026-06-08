@@ -107,8 +107,8 @@ export function PlannerShell({
 
         {children}
 
-        {/* Floating AI chat — shown on every dashboard except News, which has the inline version */}
-        {activeDashboard !== "news" && <AiChatCard variant="floating" />}
+        {/* Floating AI chat — always visible as a corner FAB on every dashboard */}
+        <AiChatCard variant="floating" />
 
         {preferences.showTicker && tickerItems.length ? (
           <div className="ticker glass">

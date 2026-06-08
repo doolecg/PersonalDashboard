@@ -19,8 +19,8 @@ const TOPICS: Array<{ label: string; feeds: string }> = [
 
 async function topicTldr(label: string, feeds: string): Promise<TldrTopic> {
   const raw = await resolveTickerItems({ footerTickerItems: "", newsRssFeeds: feeds });
-  const pool = (raw as NewsTickerItem[]).slice(0, 12);
-  const headlines: TldrHeadline[] = pool.slice(0, 4).map((item) => ({
+  const pool = (raw as NewsTickerItem[]).slice(0, 16);
+  const headlines: TldrHeadline[] = pool.slice(0, 6).map((item) => ({
     title: item.title,
     url: item.url || undefined,
     image: item.image || undefined,
@@ -31,12 +31,12 @@ async function topicTldr(label: string, feeds: string): Promise<TldrTopic> {
 
   try {
     const prompt = [
-      `Summarise today's most important ${label} news into one concise TLDR sentence.`,
-      "Plain text only: no markdown, no quotation marks, no preamble — just the sentence.",
+      `Write a single punchy 10-15 word TLDR of today's top ${label} news.`,
+      "No preamble, no markdown, no quotation marks — just the sentence itself.",
       "Headlines:",
       ...pool.map((item) => `- ${item.source}: ${item.title}`)
     ].join("\n");
-    const result = await routeAiComplete({ messages: messagesFromPrompt(prompt), maxTokens: 120 });
+    const result = await routeAiComplete({ messages: messagesFromPrompt(prompt), maxTokens: 80 });
     const message = result.message.trim();
     if (message) return { label, tldr: message, source: "ai", headlines };
   } catch {
@@ -45,8 +45,8 @@ async function topicTldr(label: string, feeds: string): Promise<TldrTopic> {
   return { label, tldr: pool[0].title, source: "headlines", headlines };
 }
 
-export async function getTldrSummaries(): Promise<TldrSummary> {
-  if (cache && Date.now() - cache.at < ttlMs) return cache.data;
+export async function getTldrSummaries(force = false): Promise<TldrSummary> {
+  if (!force && cache && Date.now() - cache.at < ttlMs) return cache.data;
   const topics = await Promise.all(TOPICS.map((topic) => topicTldr(topic.label, topic.feeds)));
   const data: TldrSummary = { topics };
   cache = { at: Date.now(), data };

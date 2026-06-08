@@ -68,36 +68,36 @@ aiRouter.get("/status", (_req, res) => {
   res.json(getAiStatus());
 });
 
-aiRouter.get("/news-summary", async (_req, res) => {
+aiRouter.get("/news-summary", async (req, res) => {
   try {
-    res.json(await getNewsSummary());
+    res.json(await getNewsSummary(req.query.force === "true"));
   } catch (error) {
     logger.error("AI news summary failed", error, { route: "/api/ai/news-summary" });
     res.status(503).json({ message: error instanceof Error ? error.message : "News summary unavailable" });
   }
 });
 
-aiRouter.get("/tech-summary", async (_req, res) => {
+aiRouter.get("/tech-summary", async (req, res) => {
   try {
-    res.json(await getTechSummary());
+    res.json(await getTechSummary(req.query.force === "true"));
   } catch (error) {
     logger.error("AI tech summary failed", error, { route: "/api/ai/tech-summary" });
     res.status(503).json({ message: error instanceof Error ? error.message : "Tech summary unavailable" });
   }
 });
 
-aiRouter.get("/science-summary", async (_req, res) => {
+aiRouter.get("/science-summary", async (req, res) => {
   try {
-    res.json(await getScienceSummary());
+    res.json(await getScienceSummary(req.query.force === "true"));
   } catch (error) {
     logger.error("AI science summary failed", error, { route: "/api/ai/science-summary" });
     res.status(503).json({ message: error instanceof Error ? error.message : "Science summary unavailable" });
   }
 });
 
-aiRouter.get("/tldr", async (_req, res) => {
+aiRouter.get("/tldr", async (req, res) => {
   try {
-    res.json(await getTldrSummaries());
+    res.json(await getTldrSummaries(req.query.force === "true"));
   } catch (error) {
     logger.error("AI TLDR summary failed", error, { route: "/api/ai/tldr" });
     res.status(503).json({ message: error instanceof Error ? error.message : "TLDR unavailable" });

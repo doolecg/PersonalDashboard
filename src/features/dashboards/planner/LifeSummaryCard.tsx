@@ -62,9 +62,10 @@ export function LifeSummaryCard() {
   }, [dataNonce]);
 
   // TLDR topic briefs (AI / Dev / Design / IT).
+  // tldrNonce > 0 means the user hit Refresh — bypass the server cache on those fetches.
   useEffect(() => {
     let cancelled = false;
-    getTldr()
+    getTldr(tldrNonce > 0)
       .then((result) => !cancelled && setTldr(result.topics))
       .catch(() => !cancelled && setTldr([]));
     return () => {

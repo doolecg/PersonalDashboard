@@ -22,12 +22,13 @@ function createNewsSummaryStore(endpoint: string) {
     for (const listener of listeners) listener();
   };
 
-  const load = async () => {
+  const load = async (force = false) => {
     loading = true;
     notify();
 
     try {
-      const response = await fetch(endpoint);
+      const url = force ? `${endpoint}?force=true` : endpoint;
+      const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       data = (await response.json()) as NewsSummary;
     } catch (error) {
@@ -49,8 +50,8 @@ function createNewsSummaryStore(endpoint: string) {
     getSnapshot(): Snapshot {
       return snapshot;
     },
-    refresh() {
-      load();
+    refresh(force = false) {
+      load(force);
     }
   };
 }
@@ -83,4 +84,10 @@ export function useTechNews() {
 
 export function useScienceNews() {
   return useNewsSummary("/api/ai/science-summary");
+}
+
+export function refreshAllNews() {
+  getOrCreateStore("/api/ai/news-summary").refresh(true);
+  getOrCreateStore("/api/ai/tech-summary").refresh(true);
+  getOrCreateStore("/api/ai/science-summary").refresh(true);
 }

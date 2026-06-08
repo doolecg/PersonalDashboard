@@ -1,8 +1,8 @@
-import { useMemo } from "react";
-import { Newspaper } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Newspaper, RefreshCw } from "lucide-react";
 import { AiSkeleton } from "../planner/AiSkeleton";
 import { Card } from "../planner/ui";
-import { useGlobalNews, useTechNews, useScienceNews } from "./useNewsSummary";
+import { useGlobalNews, useTechNews, useScienceNews, refreshAllNews } from "./useNewsSummary";
 import type { NewsSummary } from "./useNewsSummary";
 import type { NewsTickerItem } from "@/types/models";
 
@@ -91,6 +91,12 @@ export function NewsSummaryCard() {
   const global = useGlobalNews();
   const tech = useTechNews();
   const science = useScienceNews();
+  const [spinKey, setSpinKey] = useState(0);
+
+  function handleRefresh() {
+    setSpinKey((k) => k + 1);
+    refreshAllNews();
+  }
 
   return (
     <Card className="fill">
@@ -100,6 +106,14 @@ export function NewsSummaryCard() {
         </span>
         <span className="ai-title">News</span>
         <span className="ai-badge">AI</span>
+        <button
+          className="icon-btn"
+          style={{ width: 28, height: 28, background: "rgba(255,255,255,0.1)" }}
+          aria-label="Refresh news"
+          onClick={handleRefresh}
+        >
+          <RefreshCw size={14} key={spinKey} className="spinning" />
+        </button>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", minHeight: 0 }}>

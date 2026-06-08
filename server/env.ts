@@ -20,7 +20,7 @@ export const env = {
   headerUserName: process.env.HEADER_USER_NAME ?? "",
   footerTickerItems: process.env.FOOTER_TICKER_ITEMS ?? "",
   newsRssFeeds: process.env.NEWS_RSS_FEEDS ?? "BBC News|https://feeds.bbci.co.uk/news/rss.xml,Reuters|https://www.reutersagency.com/feed/?taxonomy=best-topics&output=rss",
-  globalNewsRssFeeds: process.env.GLOBAL_NEWS_RSS_FEEDS ?? "",
+  globalNewsRssFeeds: process.env.GLOBAL_NEWS_RSS_FEEDS ?? "BBC News|https://feeds.bbci.co.uk/news/rss.xml,Reuters|https://www.reutersagency.com/feed/?taxonomy=best-topics&output=rss,The Guardian|https://www.theguardian.com/world/rss",
   techNewsRssFeeds: process.env.TECH_NEWS_RSS_FEEDS ?? "Hacker News|https://news.ycombinator.com/rss,Ars Technica|https://feeds.arstechnica.com/arstechnica/index",
   scienceNewsRssFeeds: process.env.SCIENCE_NEWS_RSS_FEEDS ?? "Science Daily|https://www.sciencedaily.com/rss/all.xml,New Scientist|https://www.newscientist.com/feed/home",
   aiTopicRssFeeds: process.env.AI_NEWS_RSS_FEEDS ?? "VentureBeat AI|https://venturebeat.com/category/ai/feed/,The Verge AI|https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",

@@ -114,8 +114,9 @@ export type TldrHeadline = { title: string; url?: string; image?: string; source
 export type TldrTopic = { label: string; tldr: string; source: "ai" | "headlines"; headlines: TldrHeadline[] };
 export type TldrSummary = { topics: TldrTopic[] };
 
-export async function getTldr(): Promise<TldrSummary> {
-  const response = await fetch("/api/ai/tldr");
+export async function getTldr(force = false): Promise<TldrSummary> {
+  const url = force ? "/api/ai/tldr?force=true" : "/api/ai/tldr";
+  const response = await fetch(url);
   if (!response.ok) throw new Error(`TLDR failed with ${response.status}`);
   return response.json() as Promise<TldrSummary>;
 }

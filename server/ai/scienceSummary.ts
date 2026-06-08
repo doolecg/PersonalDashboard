@@ -12,8 +12,8 @@ export type ScienceSummary = {
 const ttlMs = 15 * 60 * 1000;
 let cache: { at: number; data: ScienceSummary } | null = null;
 
-export async function getScienceSummary(): Promise<ScienceSummary> {
-  if (cache && Date.now() - cache.at < ttlMs) return cache.data;
+export async function getScienceSummary(force = false): Promise<ScienceSummary> {
+  if (!force && cache && Date.now() - cache.at < ttlMs) return cache.data;
 
   const items = await resolveTickerItems({
     footerTickerItems: "",
