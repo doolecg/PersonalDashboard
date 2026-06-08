@@ -73,7 +73,8 @@ export function EventModal({ open, initial, onClose, onSave, onDelete }: EventMo
     if (Number.isNaN(start.getTime())) return;
     let end: string | undefined;
     if (allDay) {
-      end = endDate && endDate !== startDate ? new Date(`${endDate}T23:59`).toISOString() : undefined;
+      // All-day: end is the same calendar day as start (23:59 that night)
+      end = new Date(`${startDate}T23:59`).toISOString();
     } else if (endDate) {
       const endValue = new Date(`${endDate}T${endTime}`);
       if (!Number.isNaN(endValue.getTime()) && endValue > start) end = endValue.toISOString();
@@ -110,7 +111,15 @@ export function EventModal({ open, initial, onClose, onSave, onDelete }: EventMo
               role="switch"
               aria-checked={allDay}
               className={`evm-switch${allDay ? " on" : ""}`}
-              onClick={() => setAllDay((v) => !v)}
+              onClick={() => {
+                setAllDay((v) => {
+                  if (!v) {
+                    // Switching to all-day: sync end date to start date
+                    setEndDate(startDate);
+                  }
+                  return !v;
+                });
+              }}
             >
               <span className="evm-switch-knob" />
             </button>
@@ -122,15 +131,20 @@ export function EventModal({ open, initial, onClose, onSave, onDelete }: EventMo
             </span>
             <div className="evm-datetimes">
               <div className="evm-dt">
-                <span className="evm-dt-label">Starts</span>
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <span className="evm-dt-label">{allDay ? "Date" : "Starts"}</span>
+                <input type="date" value={startDate} onChange={(e) => {
+                  setStartDate(e.target.value);
+                  if (allDay) setEndDate(e.target.value);
+                }} />
                 {!allDay ? <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} /> : null}
               </div>
-              <div className="evm-dt">
-                <span className="evm-dt-label">Ends</span>
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                {!allDay ? <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} /> : null}
-              </div>
+              {!allDay && (
+                <div className="evm-dt">
+                  <span className="evm-dt-label">Ends</span>
+                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                  <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                </div>
+              )}
             </div>
           </div>
 
