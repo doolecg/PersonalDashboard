@@ -104,8 +104,8 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  flex: none;
-  min-width: 48px;
+  flex: 1 1 0;
+  min-width: 0;
 }
 .planner .wx-hour-label {
   font-size: 11.5px;
@@ -347,14 +347,6 @@
   font-size: 11.5px;
   color: var(--ink-faint);
   padding: 4px 0 2px;
-}
-
-/* Ultrawide: shrink hour columns so more of the 48 rendered hours are visible */
-@media (min-width: 1600px) {
-  .planner .wx-hour { min-width: 38px; }
-}
-@media (min-width: 2100px) {
-  .planner .wx-hour { min-width: 30px; }
 }
 
 @media (max-width: 1180px) {

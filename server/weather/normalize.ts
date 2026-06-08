@@ -127,7 +127,7 @@ function aggregateDaily(hourly: WeatherPoint[]): WeatherDailyPoint[] {
 
 export function normalizeMetNo(raw: MetNoResponse, city: string, latitude: number, longitude: number): NormalizedWeatherSource {
   const timeseries = raw.properties?.timeseries ?? [];
-  const hourly = timeseries.slice(0, 24).map((entry) => {
+  const hourly = timeseries.slice(0, 72).map((entry) => {
     const details = entry.data?.instant?.details ?? {};
     const nextHour = entry.data?.next_1_hours;
 

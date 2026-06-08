@@ -71,7 +71,7 @@ export function WeatherDashboard(props: WeatherDashboardProps) {
 
             {/* Hourly strip with a precipitation graph */}
             <div className="wx-card wx-hourly">
-              {data.hourly.slice(0, 48).map((hour, index) => {
+              {data.hourly.slice(0, 72).map((hour, index) => {
                 const prob = hour.probability ?? 0;
                 const mm = hour.precipitationMm ?? 0;
                 // Bar height: probability drives it, with a floor when there's measurable rain.

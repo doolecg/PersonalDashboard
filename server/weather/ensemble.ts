@@ -73,7 +73,7 @@ export function mergeWeatherSources(sources: NormalizedWeatherSource[]): Ensembl
   const currentWeights = getWeights(0);
   const current = mergePoint(valuesForTime(sources, (source) => source.current, currentWeights), new Date().toISOString());
 
-  const hourlyTimes = Array.from(new Set(sources.flatMap((source) => source.hourly.map((point) => point.time)))).slice(0, 24);
+  const hourlyTimes = Array.from(new Set(sources.flatMap((source) => source.hourly.map((point) => point.time)))).slice(0, 72);
   const dailyDates = Array.from(new Set(sources.flatMap((source) => source.daily.map((point) => point.date)))).slice(0, 14);
 
   return {

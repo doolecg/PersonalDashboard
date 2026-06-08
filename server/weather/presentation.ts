@@ -50,10 +50,8 @@ function rainRateToIntensity(precipitationMm: number) {
   return Math.max(0, Math.min(100, Math.round((precipitationMm / HEAVY_RAIN_MM_PER_HOUR) * 100)));
 }
 
-// Emit one bar per hour for the next 24 hours. The card windows this down to
-// 4h (1x1), 12h (2x1) or 24h (2x2) depending on footprint.
 function buildPrecipitationPoints(hourly: EnsembleWeather["hourly"]) {
-  return hourly.slice(0, 24).map((point) => ({
+  return hourly.slice(0, 72).map((point) => ({
     time: point.time,
     label: formatHourLabel(point.time),
     precipitationMm: Number((point.precipitationMm ?? 0).toFixed(4)),
@@ -90,7 +88,7 @@ export function buildWeatherWidgetPayload(weather: EnsembleWeather): WeatherWidg
       summary: precipitationSummary,
       points: buildPrecipitationPoints(weather.hourly)
     },
-    hourly: weather.hourly.slice(0, 24).map((point) => ({
+    hourly: weather.hourly.slice(0, 72).map((point) => ({
       time: point.time,
       label: formatHourLabel(point.time),
       temperatureC: point.temperatureC,
