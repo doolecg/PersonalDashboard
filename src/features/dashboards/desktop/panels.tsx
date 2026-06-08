@@ -9,12 +9,14 @@ import {
   Calendar,
   Code2,
   Calculator,
-  ExternalLink
+  ExternalLink,
+  BotMessageSquare
 } from "lucide-react";
 import { useConnectionStatus } from "@/app/shell/useConnectionStatus";
 import { useSystemStatus } from "./useSystemStatus";
 import { StatRow, formatMem, formatUptime } from "./desktopUi";
 import { CalculatorApp } from "./CalculatorApp";
+import { AiChatCard } from "@/features/dashboards/planner/AiChatCard";
 
 function HostBody() {
   const { data } = useSystemStatus();
@@ -140,10 +142,19 @@ export type PanelDef = {
   Body: ComponentType;
 };
 
+function AgentBody() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, margin: "-14px -16px -16px" }}>
+      <AiChatCard />
+    </div>
+  );
+}
+
 export const PANELS: PanelDef[] = [
   { id: "host", title: "Host", icon: <Cpu size={14} />, Body: HostBody },
   { id: "server", title: "Server", icon: <Server size={14} />, Body: ServerBody },
   { id: "storage", title: "Storage", icon: <HardDrive size={14} />, Body: StorageBody },
   { id: "utilities", title: "Utilities", icon: <AppWindow size={14} />, Body: UtilitiesBody },
-  { id: "calculator", title: "Calculator", icon: <Calculator size={14} />, Body: CalculatorApp }
+  { id: "calculator", title: "Calculator", icon: <Calculator size={14} />, Body: CalculatorApp },
+  { id: "agent", title: "Aura Agent", icon: <BotMessageSquare size={14} />, Body: AgentBody }
 ];

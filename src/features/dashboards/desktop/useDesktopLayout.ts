@@ -14,7 +14,8 @@ export const DEFAULT_LAYOUT: DesktopLayout = {
   server: { x: 384, y: 24, w: 300, h: 190, visible: true },
   storage: { x: 384, y: 232, w: 300, h: 150, visible: true },
   utilities: { x: 24, y: 344, w: 360, h: 230, visible: true },
-  calculator: { x: 704, y: 24, w: 260, h: 360, visible: false }
+  calculator: { x: 704, y: 24, w: 260, h: 360, visible: false },
+  agent: { x: 700, y: 24, w: 380, h: 520, visible: true }
 };
 
 function readStored(): DesktopLayout {
