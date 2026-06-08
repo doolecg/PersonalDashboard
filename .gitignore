@@ -2,3 +2,4 @@
 
 # Runtime data written by the server (notes, todos, reminders, OAuth tokens)
 data/
+.env

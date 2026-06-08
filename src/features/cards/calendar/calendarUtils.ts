@@ -4,6 +4,8 @@ const dayFormatter = new Intl.DateTimeFormat("en-GB", { weekday: "short" });
 const monthFormatter = new Intl.DateTimeFormat("en-GB", { month: "short", year: "numeric" });
 const dateFormatter = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" });
 const timeFormatter = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" });
+const dayHeaderFmt = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric" });
+const dayHeaderMonthFmt = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" });
 
 export function toDateKey(value: Date | string) {
   const date = typeof value === "string" ? new Date(value) : value;
@@ -66,4 +68,21 @@ export function formatEventWindow(event: CalendarEvent) {
 
 export function getWeekdayLabels() {
   return getCalendarMonthDays(new Date(2026, 5, 1)).slice(0, 7).map((day) => dayFormatter.format(day.date).slice(0, 2));
+}
+
+export function formatDayHeader(dateKey: string, today = new Date()): string {
+  const date = new Date(`${dateKey}T12:00`);
+  const sameMonth = date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+  return (sameMonth ? dayHeaderFmt : dayHeaderMonthFmt).format(date);
+}
+
+export function groupEventsByDate(events: CalendarEvent[]): Array<{ dateKey: string; items: CalendarEvent[] }> {
+  const map = new Map<string, CalendarEvent[]>();
+  for (const event of events) {
+    const key = toDateKey(event.start);
+    const list = map.get(key) ?? [];
+    list.push(event);
+    map.set(key, list);
+  }
+  return [...map.entries()].map(([dateKey, items]) => ({ dateKey, items }));
 }
