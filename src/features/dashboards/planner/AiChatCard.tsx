@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { MessageCircle, RefreshCw, Send, Sparkles, X } from "lucide-react";
 import { getChatMessages, setChatMessages } from "./chatStore";
 import {
@@ -26,6 +26,15 @@ const suggestions = [
   "What should I wear for the evening?"
 ];
 
+const PANEL_OPEN_KEY = "aura-chat-open";
+const PANEL_W_KEY = "aura-chat-w";
+const PANEL_H_KEY = "aura-chat-h";
+const MIN_W = 280;
+const MAX_W = 640;
+const MIN_H = 280;
+const DEFAULT_W = 340;
+const DEFAULT_H = 560;
+
 type AiChatCardProps = {
   // "inline" sits in the desktop column; "floating" is the phone live-chat
   // button that opens a slide-up panel.
@@ -36,7 +45,10 @@ export function AiChatCard({ variant = "inline" }: AiChatCardProps) {
   const [messages, setMessages] = useState<AssistantChatMessage[]>(() => getChatMessages());
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => sessionStorage.getItem(PANEL_OPEN_KEY) === "1");
+  const [panelW, setPanelW] = useState(() => parseInt(sessionStorage.getItem(PANEL_W_KEY) ?? String(DEFAULT_W), 10));
+  const [panelH, setPanelH] = useState(() => parseInt(sessionStorage.getItem(PANEL_H_KEY) ?? String(DEFAULT_H), 10));
+  const dragRef = useRef<{ startX: number; startY: number; startW: number; startH: number } | null>(null);
   const [contextNonce, setContextNonce] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const preferences = usePreferences();
@@ -76,6 +88,37 @@ export function AiChatCard({ variant = "inline" }: AiChatCardProps) {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
+
+  // Persist floating panel open/size state so nav changes don't close or resize it.
+  useEffect(() => { sessionStorage.setItem(PANEL_OPEN_KEY, open ? "1" : "0"); }, [open]);
+  useEffect(() => { sessionStorage.setItem(PANEL_W_KEY, String(panelW)); }, [panelW]);
+  useEffect(() => { sessionStorage.setItem(PANEL_H_KEY, String(panelH)); }, [panelH]);
+
+  const onResizePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    const snapW = panelW;
+    const snapH = panelH;
+    dragRef.current = { startX: e.clientX, startY: e.clientY, startW: snapW, startH: snapH };
+
+    const onMove = (ev: PointerEvent) => {
+      if (!dragRef.current) return;
+      const { startX, startY, startW, startH } = dragRef.current;
+      // Panel is anchored bottom-right, so dragging left/up increases size.
+      const newW = Math.max(MIN_W, Math.min(MAX_W, startW - (ev.clientX - startX)));
+      const newH = Math.max(MIN_H, Math.min(window.innerHeight - 140, startH - (ev.clientY - startY)));
+      setPanelW(newW);
+      setPanelH(newH);
+    };
+
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }, [panelW, panelH]);
 
   // Give the assistant the user's location, conditions, and the rest of the
   // dashboard so it can answer questions without needing a tool call.
@@ -220,7 +263,13 @@ export function AiChatCard({ variant = "inline" }: AiChatCardProps) {
         >
           {open ? <X size={22} /> : <MessageCircle size={22} />}
         </button>
-        <Card className={`w-ai ai-panel${open ? " open" : ""}`}>{chatBody}</Card>
+        <Card
+          className={`w-ai ai-panel${open ? " open" : ""}`}
+          style={{ width: panelW, height: panelH }}
+        >
+          <div className="ai-resize-handle" onPointerDown={onResizePointerDown} aria-hidden />
+          {chatBody}
+        </Card>
       </>
     );
   }

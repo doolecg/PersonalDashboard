@@ -1,7 +1,7 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
-export function Card({ className = "", children, pad = true }: { className?: string; children: ReactNode; pad?: boolean }) {
-  return <div className={`glass ${pad ? "glass-pad " : ""}${className}`}>{children}</div>;
+export function Card({ className = "", children, pad = true, style }: { className?: string; children: ReactNode; pad?: boolean; style?: CSSProperties }) {
+  return <div className={`glass ${pad ? "glass-pad " : ""}${className}`} style={style}>{children}</div>;
 }
 
 export function CardHead({ icon, title, action }: { icon: ReactNode; title: string; action?: ReactNode }) {
