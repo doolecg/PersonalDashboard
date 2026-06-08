@@ -65,13 +65,15 @@ export function precipitationBand(mm: number): PrecipBand {
 }
 
 // Map a rain rate to a 0-100 bar height aligned with the Light / Moderate /
-// Heavy gridlines: each band fills one third of the graph so a bar's top lands
-// against the matching axis label.
+// Heavy gridlines. The three lines sit closer together (30% apart: Light at 30%,
+// Moderate at 60%, Heavy at 90% of the height) so a light shower, moderate rain,
+// and a heavy pour are visually distinct. The rate is interpolated *within* each
+// band so the bar reflects exactly how much rain will fall, not just its band.
 export function precipitationBandHeight(mm: number) {
   if (mm <= 0.05) return 0;
-  if (mm < LIGHT_MAX) return 8 + (mm / LIGHT_MAX) * 25; // 8 -> 33
-  if (mm < MODERATE_MAX) return 33 + ((mm - LIGHT_MAX) / (MODERATE_MAX - LIGHT_MAX)) * 33; // 33 -> 66
-  return Math.min(100, 66 + ((mm - MODERATE_MAX) / 12.4) * 34); // 66 -> 100
+  if (mm < LIGHT_MAX) return 8 + (mm / LIGHT_MAX) * 22; // 8 -> 30 (up to the Light line)
+  if (mm < MODERATE_MAX) return 30 + ((mm - LIGHT_MAX) / (MODERATE_MAX - LIGHT_MAX)) * 30; // 30 -> 60 (Moderate line)
+  return Math.min(96, 60 + ((mm - MODERATE_MAX) / 12.4) * 36); // 60 -> 96 (Heavy line and above)
 }
 
 export function formatClock(time: string) {

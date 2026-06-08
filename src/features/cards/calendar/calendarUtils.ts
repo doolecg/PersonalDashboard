@@ -59,6 +59,7 @@ export function formatTimeLabel(date: Date | string) {
 }
 
 export function formatEventWindow(event: CalendarEvent) {
+  if (event.allDay) return "All day";
   const start = formatTimeLabel(event.start);
   return event.end ? `${start} - ${formatTimeLabel(event.end)}` : start;
 }

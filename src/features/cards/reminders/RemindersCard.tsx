@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { BellRing, Check, Plus, X } from "lucide-react";
 import { getReminders, saveReminders, type Reminder } from "@/app/apiClient";
+import { on } from "@/features/dashboards/planner/plannerEvents";
 import type { CardComponentProps } from "../types";
 import { WeatherWidgetFrame } from "../weather/WeatherWidgetFrame";
 
@@ -21,10 +22,21 @@ function formatDue(due?: string) {
   }).format(date);
 }
 
-export function RemindersCard(_props: CardComponentProps) {
+export interface RemindersCardProps extends Partial<CardComponentProps> {
+  isCompact?: boolean;
+}
+
+export function RemindersCard({ isCompact }: RemindersCardProps) {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [text, setText] = useState("");
   const [due, setDue] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [nonce, setNonce] = useState(0);
+
+  useEffect(() => {
+    return on("reminders-changed", () => setNonce((v) => v + 1));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,7 +46,7 @@ export function RemindersCard(_props: CardComponentProps) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [nonce]);
 
   function commit(next: Reminder[]) {
     setReminders(next);
@@ -51,6 +63,25 @@ export function RemindersCard(_props: CardComponentProps) {
     ]);
     setText("");
     setDue("");
+  }
+
+  function startEdit(id: string, text: string) {
+    setEditingId(id);
+    setEditText(text);
+  }
+
+  function saveEdit(id: string) {
+    const trimmed = editText.trim();
+    if (!trimmed) {
+      setEditingId(null);
+      return;
+    }
+    commit(reminders.map((item) => (item.id === id ? { ...item, text: trimmed } : item)));
+    setEditingId(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
   }
 
   const sorted = useMemo(
@@ -87,9 +118,29 @@ export function RemindersCard(_props: CardComponentProps) {
                 >
                   <Check className="h-3 w-3" />
                 </button>
-                <span className={`min-w-0 flex-1 truncate text-xs ${reminder.done ? "text-white/40 line-through" : "text-white/88"}`}>
-                  {reminder.text}
-                </span>
+                {editingId === reminder.id ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onBlur={() => saveEdit(reminder.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveEdit(reminder.id);
+                      if (e.key === "Escape") cancelEdit();
+                    }}
+                    className="min-w-0 flex-1 rounded px-1 bg-white/20 text-xs text-white/90 outline-none"
+                  />
+                ) : (
+                  <span
+                    onClick={() => !reminder.done && startEdit(reminder.id, reminder.text)}
+                    className={`min-w-0 flex-1 truncate text-xs cursor-pointer ${
+                      reminder.done ? "text-white/40 line-through" : "text-white/88 hover:text-white"
+                    }`}
+                  >
+                    {reminder.text}
+                  </span>
+                )}
                 {reminder.due ? <span className="shrink-0 text-[10px] font-semibold text-white/50">{formatDue(reminder.due)}</span> : null}
                 <button
                   type="button"

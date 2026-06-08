@@ -16,7 +16,7 @@ function buildOpenMeteoUrl(latitude: number, longitude: number, model: string) {
     latitude: String(latitude),
     longitude: String(longitude),
     timezone: "auto",
-    forecast_days: "10",
+    forecast_days: "14",
     forecast_hours: "24",
     current: [
       "temperature_2m",

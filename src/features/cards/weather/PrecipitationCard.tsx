@@ -32,7 +32,7 @@ function PrecipitationGraph({ points, heightClassName }: GraphProps) {
       {points.map((point) => (
         <div data-precipitation-bar="true" key={point.time} className="flex h-full items-end">
           <div
-            className="w-full rounded-t-[5px] rounded-b-sm bg-sky-300/95"
+            className="w-full rounded-t-[5px] rounded-b-sm bg-blue-500"
             style={{
               height: `${Math.max(4, clampPercentage(point.intensity))}%`,
               opacity: getPrecipitationBarOpacity(point.probability),
@@ -44,11 +44,13 @@ function PrecipitationGraph({ points, heightClassName }: GraphProps) {
   );
 }
 
+// Strong blues that deepen with intensity: a light shower reads as a bright sky
+// blue, a moderate spell a solid blue, and a heavy pour a deep blue.
 const bandColor: Record<string, string> = {
   none: "bg-white/12",
-  light: "bg-sky-300/80",
-  moderate: "bg-sky-300/90",
-  heavy: "bg-amber-300/90",
+  light: "bg-sky-400",
+  moderate: "bg-blue-500",
+  heavy: "bg-blue-700",
 };
 
 // Android-style banded graph: Heavy / Moderate / Light gridlines, rounded "blob"
@@ -68,20 +70,20 @@ function PrecipitationBandGraph({
   return (
     <div>
       <div className={`relative flex ${heightClassName}`}>
-        {/* Y-axis band labels */}
+        {/* Y-axis band labels — packed ~30% apart (Heavy 10%, Moderate 40%, Light 70%) */}
         <div className="relative w-[4.5rem] shrink-0 text-[11px] font-medium text-white/55">
-          <span className="absolute left-0 top-0 -translate-y-1/2">Heavy</span>
-          <span className="absolute left-0 top-1/3 -translate-y-1/2">Moderate</span>
-          <span className="absolute left-0 top-2/3 -translate-y-1/2">Light</span>
+          <span className="absolute left-0 top-[10%] -translate-y-1/2">Heavy</span>
+          <span className="absolute left-0 top-[40%] -translate-y-1/2">Moderate</span>
+          <span className="absolute left-0 top-[70%] -translate-y-1/2">Light</span>
         </div>
 
         {/* Plot area */}
         <div className="relative min-w-0 flex-1">
-          {/* gridlines at the band boundaries */}
+          {/* gridlines at the band boundaries (match the labels above) */}
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute inset-x-0 top-0 border-t border-white/10" />
-            <div className="absolute inset-x-0 top-1/3 border-t border-white/10" />
-            <div className="absolute inset-x-0 top-2/3 border-t border-white/10" />
+            <div className="absolute inset-x-0 top-[10%] border-t border-white/10" />
+            <div className="absolute inset-x-0 top-[40%] border-t border-white/10" />
+            <div className="absolute inset-x-0 top-[70%] border-t border-white/10" />
             <div className="absolute inset-x-0 bottom-0 border-t border-white/15" />
           </div>
 

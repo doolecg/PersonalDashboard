@@ -20,7 +20,8 @@ import { ModelSettings } from "./ModelSettings";
 import { SecretsSettings } from "./SecretsSettings";
 
 const layoutStorageKey = "dashboard-card-layout";
-export const settingsDialogContentClassName = "dark max-h-[85vh] overflow-y-auto bg-background/95 text-foreground";
+export const settingsDialogContentClassName =
+  "dark max-h-[88vh] w-[95vw] max-w-[95vw] overflow-y-auto bg-background/95 text-foreground sm:max-w-2xl lg:max-w-4xl";
 
 type SettingsDialogProps = {
   open: boolean;
@@ -58,7 +59,7 @@ export function SettingsDialog({
           <DialogDescription>Personalise your dashboard.</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <SettingRow
             icon={<User className="h-4 w-4" />}
             title="Display name"
@@ -197,9 +198,14 @@ export function SettingsDialog({
             </Button>
           </SettingRow>
 
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
           <ModelSettings />
           <LocalAiSettings />
-          <SecretsSettings />
+          <div className="lg:col-span-2">
+            <SecretsSettings />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

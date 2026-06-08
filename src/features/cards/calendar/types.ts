@@ -6,6 +6,7 @@ export type CalendarEvent = {
   location?: string;
   description?: string;
   category?: string;
+  allDay?: boolean;
 };
 
 export type CalendarDay = {

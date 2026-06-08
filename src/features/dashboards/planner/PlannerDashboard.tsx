@@ -1,7 +1,8 @@
 import { CloudSun, Settings2 } from "lucide-react";
 import { usePreferences } from "@/app/preferences/usePreferences";
-import { buildTickerTrack } from "@/app/shell/shellUi";
 import { useShellClock } from "@/app/shell/useShellClock";
+import { useTickerTrack } from "@/app/shell/useTickerTrack";
+import { useMediaQuery } from "@/app/useMediaQuery";
 import { useWeatherData } from "@/features/cards/weather/useWeatherData";
 import bgImage from "@/assets/bg.png";
 import { AiChatCard } from "./AiChatCard";
@@ -52,7 +53,8 @@ export function PlannerDashboard({ onOpenSettings, userName, profileImage, ticke
   const { timeText, dateText } = useShellClock(!preferences.clock24h);
   const initials = userName.trim().slice(0, 1).toUpperCase() || "A";
   const background = preferences.backgroundImage || bgImage;
-  const track = buildTickerTrack(tickerItems);
+  const track = useTickerTrack(tickerItems);
+  const isPhone = useMediaQuery("(max-width: 720px)");
 
   return (
     <div className="planner">
@@ -81,22 +83,34 @@ export function PlannerDashboard({ onOpenSettings, userName, profileImage, ticke
           </div>
         </header>
 
-        <div className="body">
-          <div className="col">
-            <WeatherTallCard />
-          </div>
-          <div className="col">
-            <AiChatCard />
-          </div>
-          <div className="col">
-            <PlannerCalendarCard />
+        {isPhone ? (
+          // Phone: a single scrolling column with the AI summary first, and the
+          // chat moved into a floating live-chat button (rendered below).
+          <div className="body-mobile">
             <LifeSummaryCard />
-          </div>
-          <div className="col">
+            <WeatherTallCard />
+            <PlannerCalendarCard />
             <TodoGlassCard />
             <StickyNotesCard />
           </div>
-        </div>
+        ) : (
+          <div className="body">
+            <div className="col">
+              <WeatherTallCard />
+            </div>
+            <div className="col">
+              <AiChatCard />
+            </div>
+            <div className="col">
+              <PlannerCalendarCard />
+              <LifeSummaryCard />
+            </div>
+            <div className="col">
+              <TodoGlassCard />
+              <StickyNotesCard />
+            </div>
+          </div>
+        )}
 
         {preferences.showTicker && tickerItems.length ? (
           <div className="ticker glass">
@@ -104,7 +118,7 @@ export function PlannerDashboard({ onOpenSettings, userName, profileImage, ticke
               <span className="live-dot" /> Live
             </span>
             <div className="ticker-feed">
-              <div className="shell-ticker-track" style={{ "--shell-ticker-duration": "1000s" } as CSSProperties}>
+              <div className="shell-ticker-track" style={{ "--shell-ticker-duration": "2000s" } as CSSProperties}>
                 {track.map((item, index) => (
                   <span className="ticker-item" key={`${item.source}-${index}`}>
                     <span className="ti-src">{item.source}</span>
@@ -116,6 +130,8 @@ export function PlannerDashboard({ onOpenSettings, userName, profileImage, ticke
           </div>
         ) : null}
       </div>
+
+      {isPhone ? <AiChatCard variant="floating" /> : null}
     </div>
   );
 }

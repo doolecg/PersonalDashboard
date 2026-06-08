@@ -16,11 +16,13 @@ let cache: { at: number; data: NewsSummary } | null = null;
 export async function getNewsSummary(): Promise<NewsSummary> {
   if (cache && Date.now() - cache.at < ttlMs) return cache.data;
 
+  // Pull every article from every configured RSS feed.
+  const feedsToUse = env.globalNewsRssFeeds || env.newsRssFeeds;
   const items = await resolveTickerItems({
     footerTickerItems: env.footerTickerItems,
-    newsRssFeeds: env.newsRssFeeds
+    newsRssFeeds: feedsToUse
   });
-  const headlines = items.slice(0, 12);
+  const headlines = items.slice(0, 24);
 
   let data: NewsSummary;
   if (!headlines.length) {
@@ -28,18 +30,24 @@ export async function getNewsSummary(): Promise<NewsSummary> {
   } else {
     try {
       const prompt = [
-        "Summarise today's headlines into 4 short, calm bullet lines.",
-        "One line per bullet, no markdown, no numbering, max 14 words each.",
+        "Write a structured news brief from the headlines below.",
+        "Format exactly as follows, each on its own line:",
+        "First line: a single sentence naming today's single most important story.",
+        "Then 3 to 4 further lines, each starting with a short theme label followed by a colon and one sentence grouping related stories under that theme (for example 'World: ...', 'Politics: ...', 'Business: ...', 'Sport: ...').",
+        "Use only themes that the headlines actually support. Direct, factual tone.",
+        "Plain text only: no markdown, no bold, no bullet points, no numbering, no quotation marks. One line per item, separated by single newlines.",
         "Headlines:",
         ...headlines.map((item) => `- ${item.source}: ${item.title}`)
       ].join("\n");
-      const result = await routeAiComplete({ messages: messagesFromPrompt(prompt), maxTokens: 220 });
-      data = { summary: result.message.trim(), headlines: headlines.slice(0, 4), source: "ai" };
+      const result = await routeAiComplete({ messages: messagesFromPrompt(prompt), maxTokens: 400 });
+      const message = result.message.trim();
+      if (!message) throw new Error("Empty news summary.");
+      data = { summary: message, headlines, source: "ai" };
     } catch {
-      // No AI available — fall back to the raw headlines.
+      // No AI available — fall back to a plain run-through of the headlines.
       data = {
-        summary: headlines.slice(0, 4).map((item) => `${item.source}: ${item.title}`).join("\n"),
-        headlines: headlines.slice(0, 4),
+        summary: headlines.slice(0, 6).map((item) => `${item.source}: ${item.title}.`).join(" "),
+        headlines,
         source: "headlines"
       };
     }

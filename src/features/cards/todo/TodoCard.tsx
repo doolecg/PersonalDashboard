@@ -11,6 +11,8 @@ function newId() {
 export function TodoCard(_props: CardComponentProps) {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [draft, setDraft] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -42,6 +44,25 @@ export function TodoCard(_props: CardComponentProps) {
 
   function remove(id: string) {
     commit(todos.filter((todo) => todo.id !== id));
+  }
+
+  function startEdit(id: string, text: string) {
+    setEditingId(id);
+    setEditText(text);
+  }
+
+  function saveEdit(id: string) {
+    const trimmed = editText.trim();
+    if (!trimmed) {
+      setEditingId(null);
+      return;
+    }
+    commit(todos.map((todo) => (todo.id === id ? { ...todo, text: trimmed } : todo)));
+    setEditingId(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
   }
 
   const remaining = todos.filter((todo) => !todo.done).length;
@@ -79,9 +100,29 @@ export function TodoCard(_props: CardComponentProps) {
                 >
                   <Check className="h-3 w-3" />
                 </button>
-                <span className={`min-w-0 flex-1 truncate text-sm ${todo.done ? "text-white/40 line-through" : "text-white/88"}`}>
-                  {todo.text}
-                </span>
+                {editingId === todo.id ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onBlur={() => saveEdit(todo.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveEdit(todo.id);
+                      if (e.key === "Escape") cancelEdit();
+                    }}
+                    className="min-w-0 flex-1 rounded px-1 bg-white/20 text-sm text-white/90 outline-none"
+                  />
+                ) : (
+                  <span
+                    onClick={() => !todo.done && startEdit(todo.id, todo.text)}
+                    className={`min-w-0 flex-1 truncate text-sm cursor-pointer ${
+                      todo.done ? "text-white/40 line-through" : "text-white/88 hover:text-white"
+                    }`}
+                  >
+                    {todo.text}
+                  </span>
+                )}
                 <button
                   type="button"
                   aria-label="Delete task"

@@ -1,7 +1,14 @@
 import { Router } from "express";
 import { logger } from "../logger.js";
 import { getSecretsStatus, secretFields, updateSecrets, type SecretField } from "../secrets.js";
-import { configFields, getServerConfig, updateServerConfig, type ConfigField } from "../serverConfig.js";
+import {
+  configFields,
+  detectLocalModels,
+  getServerConfig,
+  updateServerConfig,
+  type ConfigField,
+  type LocalProvider
+} from "../serverConfig.js";
 
 export const settingsRouter = Router();
 
@@ -21,6 +28,20 @@ settingsRouter.patch("/config", async (req, res) => {
   } catch (error) {
     logger.error("Failed to update server config", error, { route: "/api/settings/config" });
     res.status(500).json({ message: "Failed to save settings" });
+  }
+});
+
+// Probe a local AI server (LM Studio / Ollama) for the model(s) it has loaded.
+settingsRouter.post("/local/detect", async (req, res) => {
+  try {
+    const body = (req.body ?? {}) as { provider?: unknown; baseUrl?: unknown };
+    const provider: LocalProvider = body.provider === "ollama" ? "ollama" : "lmstudio";
+    const baseUrl = typeof body.baseUrl === "string" ? body.baseUrl : "";
+    const models = await detectLocalModels(provider, baseUrl);
+    res.json({ models });
+  } catch (error) {
+    logger.error("Failed to detect local models", error, { route: "/api/settings/local/detect" });
+    res.status(500).json({ message: "Failed to detect local models" });
   }
 });
 

@@ -101,7 +101,7 @@ export async function sendAssistantMessage(
   return response.json() as Promise<AssistantResult>;
 }
 
-export type NewsHeadline = { source: string; title: string; url: string };
+export type NewsHeadline = { source: string; title: string; url: string; image?: string };
 export type NewsSummary = { summary: string; headlines: NewsHeadline[]; source: "ai" | "headlines" };
 
 export async function getNewsSummary(): Promise<NewsSummary> {
@@ -110,14 +110,31 @@ export async function getNewsSummary(): Promise<NewsSummary> {
   return response.json() as Promise<NewsSummary>;
 }
 
+export type TldrHeadline = { title: string; url?: string; image?: string; source: string };
+export type TldrTopic = { label: string; tldr: string; source: "ai" | "headlines"; headlines: TldrHeadline[] };
+export type TldrSummary = { topics: TldrTopic[] };
+
+export async function getTldr(): Promise<TldrSummary> {
+  const response = await fetch("/api/ai/tldr");
+  if (!response.ok) throw new Error(`TLDR failed with ${response.status}`);
+  return response.json() as Promise<TldrSummary>;
+}
+
 export type LifeSummaryEvent = { title: string; start: string; end?: string; location?: string; category?: string };
 export type LifeSummary = { summary: string; source: "ai" | "fallback" };
 
-export async function getLifeSummary(events: LifeSummaryEvent[], weather?: string): Promise<LifeSummary> {
+export async function getLifeSummary(
+  events: LifeSummaryEvent[],
+  weather?: string,
+  tasks?: string[],
+  reminders?: string[],
+  news?: string[],
+  advice?: string
+): Promise<LifeSummary> {
   const response = await fetch("/api/ai/life-summary", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ events, weather })
+    body: JSON.stringify({ events, weather, tasks, reminders, news, advice })
   });
   if (!response.ok) throw new Error(`Life summary failed with ${response.status}`);
   return response.json() as Promise<LifeSummary>;
@@ -144,13 +161,16 @@ export async function updateSecrets(patch: Record<string, string>): Promise<Secr
   return payload.secrets ?? {};
 }
 
-export type ServerConfig = { localAiBaseUrl: string; localAiModel: string };
+export type LocalAiProvider = "lmstudio" | "ollama";
+export type ServerConfig = { localAiProvider: LocalAiProvider; localAiBaseUrl: string; localAiModel: string };
+
+const emptyServerConfig: ServerConfig = { localAiProvider: "lmstudio", localAiBaseUrl: "", localAiModel: "" };
 
 export async function getServerConfig(): Promise<ServerConfig> {
   const response = await fetch("/api/settings/config");
   if (!response.ok) throw new Error(`Failed to load config (${response.status})`);
   const payload = (await response.json()) as { config?: ServerConfig };
-  return payload.config ?? { localAiBaseUrl: "", localAiModel: "" };
+  return payload.config ?? emptyServerConfig;
 }
 
 export async function updateServerConfig(patch: Partial<ServerConfig>): Promise<ServerConfig> {
@@ -161,7 +181,18 @@ export async function updateServerConfig(patch: Partial<ServerConfig>): Promise<
   });
   if (!response.ok) throw new Error(`Failed to save config (${response.status})`);
   const payload = (await response.json()) as { config?: ServerConfig };
-  return payload.config ?? { localAiBaseUrl: "", localAiModel: "" };
+  return payload.config ?? emptyServerConfig;
+}
+
+export async function detectLocalModels(provider: LocalAiProvider, baseUrl: string): Promise<string[]> {
+  const response = await fetch("/api/settings/local/detect", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ provider, baseUrl })
+  });
+  if (!response.ok) throw new Error(`Failed to detect models (${response.status})`);
+  const payload = (await response.json()) as { models?: string[] };
+  return payload.models ?? [];
 }
 
 export type GoogleStatus = { configured: boolean; connected: boolean };
@@ -199,3 +230,7 @@ export const getTodos = () => getCollection<Todo>("todos");
 export const saveTodos = (items: Todo[]) => saveCollection("todos", items);
 export const getReminders = () => getCollection<Reminder>("reminders");
 export const saveReminders = (items: Reminder[]) => saveCollection("reminders", items);
+// Server-backed calendar events (e.g. ones the AI assistant creates), merged
+// with the browser's local events by the calendar cards.
+export const getEvents = () => getCollection<CalendarEventDTO>("events");
+export const saveEvents = (items: CalendarEventDTO[]) => saveCollection("events", items);

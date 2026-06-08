@@ -1,23 +1,14 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { Pencil, Settings2, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dashboardIds, dashboardLabels, type DashboardId } from "@/features/dashboards/dashboards";
-import { buildTickerTrack, getMillisecondsUntilNextTickerBucket, getTickerSeedBucket } from "./shellUi";
+import { useTickerTrack } from "./useTickerTrack";
 import type { ConnectionState, TickerItem } from "./types";
 
 const shellTickerDurationSeconds = 2000;
 
 const footerButtonClassName =
   "inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/70 text-foreground transition hover:bg-accent/70";
-
-function createSeededRandom(seed: number) {
-  let state = (seed >>> 0) || 1;
-
-  return () => {
-    state = (state * 1664525 + 1013904223) >>> 0;
-    return state / 4294967296;
-  };
-}
 
 type ShellFooterProps = {
   tickerItems: TickerItem[];
@@ -50,30 +41,10 @@ export function ShellFooter({
   activeDashboard,
   onSelectDashboard,
 }: ShellFooterProps) {
-  const [tickerSeedBucket, setTickerSeedBucket] = useState(() => getTickerSeedBucket(Date.now()));
-
-  useEffect(() => {
-    let timeoutId = 0;
-
-    const scheduleNextBucket = () => {
-      const now = Date.now();
-      timeoutId = window.setTimeout(() => {
-        setTickerSeedBucket(getTickerSeedBucket(Date.now()));
-        scheduleNextBucket();
-      }, getMillisecondsUntilNextTickerBucket(now));
-    };
-
-    scheduleNextBucket();
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, []);
-
-  const trackItems = buildTickerTrack(tickerItems, createSeededRandom(tickerSeedBucket));
+  const trackItems = useTickerTrack(tickerItems);
 
   return (
-    <footer className="mx-auto flex w-full max-w-6xl items-center gap-5 overflow-hidden rounded-3xl border border-border/60 bg-background/55 px-4 py-2.5 backdrop-blur-xl">
+    <footer className="mx-auto flex w-full max-w-6xl items-center gap-5 overflow-hidden rounded-[26px] border border-white/[0.16] bg-[linear-gradient(157deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.03)_45%,rgba(255,255,255,0.015)_100%),linear-gradient(157deg,rgba(74,80,124,0.42)_0%,rgba(34,38,70,0.52)_100%)] px-4 py-2.5 shadow-[0_20px_54px_rgba(6,8,28,0.4),inset_0_1px_0_rgba(255,255,255,0.28)]">
       <div className="flex shrink-0 items-center gap-3">
         <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-background/70 text-muted-foreground">
           {profileImage ? (

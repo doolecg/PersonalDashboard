@@ -4,7 +4,7 @@ import type { ShellConfig } from "./types";
 
 const fallbackConfig: ShellConfig = { userName: "Aura", tickerItems: [] };
 
-const refreshIntervalMs = 15 * 60 * 1000;
+const refreshIntervalMs = 10 * 60 * 1000;
 
 export function useShellConfig() {
   const [config, setConfig] = useState<ShellConfig>(fallbackConfig);
@@ -23,7 +23,7 @@ export function useShellConfig() {
     };
 
     load();
-    // Refresh the news/ticker items every 15 minutes.
+    // Refresh the news/ticker items every 10 minutes.
     const intervalId = window.setInterval(load, refreshIntervalMs);
 
     return () => {

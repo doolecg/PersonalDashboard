@@ -101,7 +101,7 @@ export function buildWeatherWidgetPayload(weather: EnsembleWeather): WeatherWidg
       cloudCoverPercent: point.cloudCoverPercent,
       conditionCode: conditionCodeFromWeatherCode(point.weatherCode)
     })),
-    daily: weather.daily.slice(0, 10).map((point) => ({
+    daily: weather.daily.slice(0, 14).map((point) => ({
       date: point.date,
       label: formatDayLabel(point.date),
       highC: point.highC,

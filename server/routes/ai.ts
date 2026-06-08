@@ -2,6 +2,9 @@ import { Router, type Response } from "express";
 import { runAssistant, type AssistantMessage } from "../ai/assistant.js";
 import { generateLifeSummary, type LifeSummaryEvent } from "../ai/lifeSummary.js";
 import { getNewsSummary } from "../ai/newsSummary.js";
+import { getTechSummary } from "../ai/techSummary.js";
+import { getScienceSummary } from "../ai/scienceSummary.js";
+import { getTldrSummaries } from "../ai/tldrSummary.js";
 import { redactContextForPrompt } from "../ai/redactContext.js";
 import { env } from "../env.js";
 import { logger } from "../logger.js";
@@ -74,11 +77,56 @@ aiRouter.get("/news-summary", async (_req, res) => {
   }
 });
 
+aiRouter.get("/tech-summary", async (_req, res) => {
+  try {
+    res.json(await getTechSummary());
+  } catch (error) {
+    logger.error("AI tech summary failed", error, { route: "/api/ai/tech-summary" });
+    res.status(503).json({ message: error instanceof Error ? error.message : "Tech summary unavailable" });
+  }
+});
+
+aiRouter.get("/science-summary", async (_req, res) => {
+  try {
+    res.json(await getScienceSummary());
+  } catch (error) {
+    logger.error("AI science summary failed", error, { route: "/api/ai/science-summary" });
+    res.status(503).json({ message: error instanceof Error ? error.message : "Science summary unavailable" });
+  }
+});
+
+aiRouter.get("/tldr", async (_req, res) => {
+  try {
+    res.json(await getTldrSummaries());
+  } catch (error) {
+    logger.error("AI TLDR summary failed", error, { route: "/api/ai/tldr" });
+    res.status(503).json({ message: error instanceof Error ? error.message : "TLDR unavailable" });
+  }
+});
+
 aiRouter.post("/life-summary", async (req, res) => {
   try {
-    const body = req.body as { events?: LifeSummaryEvent[]; weather?: string };
+    const body = req.body as {
+      events?: LifeSummaryEvent[];
+      weather?: string;
+      tasks?: unknown;
+      reminders?: unknown;
+      news?: unknown;
+      advice?: unknown;
+    };
     const events = Array.isArray(body.events) ? body.events : [];
-    res.json(await generateLifeSummary(events, typeof body.weather === "string" ? body.weather : undefined));
+    const onlyStrings = (value: unknown) =>
+      Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+    res.json(
+      await generateLifeSummary(
+        events,
+        typeof body.weather === "string" ? body.weather : undefined,
+        onlyStrings(body.tasks),
+        onlyStrings(body.reminders),
+        onlyStrings(body.news),
+        typeof body.advice === "string" ? body.advice : undefined
+      )
+    );
   } catch (error) {
     logger.error("AI life summary failed", error, { route: "/api/ai/life-summary" });
     res.status(503).json({ message: error instanceof Error ? error.message : "Life summary unavailable" });

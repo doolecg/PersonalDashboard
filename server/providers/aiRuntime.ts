@@ -6,6 +6,7 @@ import { ollamaProvider } from "../adapters/ollamaProvider.js";
 import { env } from "../env.js";
 import { logger } from "../logger.js";
 import { readObject, writeObject } from "../store/collectionStore.js";
+import { getLocalProvider } from "../serverConfig.js";
 import type { AiProvider } from "./aiProvider.js";
 import type { AiRequest, AiRouteAttempt, AiRoutingMode, AiUsageSnapshot } from "../types/models.js";
 
@@ -109,12 +110,12 @@ function attempt(providerName: string, model: string, provider: AiProvider): Att
 }
 
 function localAttempts(): Attempt[] {
-  // OpenAI-compatible first — it's the user-configurable local server URL
-  // (LM Studio / llama.cpp), then Ollama on its native endpoint.
-  return [
-    attempt("openai-compatible", env.openAiCompatModel, llamaCppOpenAiProvider),
-    attempt("ollama", env.ollamaModel, ollamaProvider)
-  ];
+  // Use only the local provider the user picked in Settings (LM Studio's
+  // OpenAI-compatible server, or Ollama's native endpoint) — don't fan out to
+  // the other and rack up failures for a backend that isn't running.
+  return getLocalProvider() === "ollama"
+    ? [attempt("ollama", env.ollamaModel, ollamaProvider)]
+    : [attempt("openai-compatible", env.openAiCompatModel, llamaCppOpenAiProvider)];
 }
 
 function baseAttemptsForMode(mode: AiRoutingMode): Attempt[] {
@@ -143,6 +144,15 @@ function attemptsForMode(mode: AiRoutingMode): Attempt[] {
 
 function canSkipProvider(error: Error) {
   return /authentication failed|api_key is not configured/i.test(error.message);
+}
+
+// A model that returns a rate-limit/quota error is put on a cooldown so the next
+// request starts from a fresh free model instead of re-hitting the limited one.
+const rateLimitedUntil = new Map<string, number>();
+const RATE_LIMIT_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
+function isRateLimited(error: Error) {
+  return /rate.?limit|quota|429|too many requests|temporarily/i.test(error.message);
 }
 
 function fallbackAttempts() {
@@ -191,7 +201,13 @@ export function isAiRoutingMode(value: unknown): value is AiRoutingMode {
 export async function routeAiComplete(request: AiRequest): Promise<RouteResult> {
   const attempts: AiRouteAttempt[] = [];
   const blockedProviders = new Set<string>();
-  const candidates = [...attemptsForMode(currentMode), ...fallbackAttempts()];
+  const allCandidates = [...attemptsForMode(currentMode), ...fallbackAttempts()];
+
+  // Prefer models that aren't on a rate-limit cooldown; if every candidate is
+  // cooling down, fall back to trying them all anyway so we never hard-stop.
+  const now = Date.now();
+  const fresh = allCandidates.filter((candidate) => (rateLimitedUntil.get(candidate.model) ?? 0) <= now);
+  const candidates = fresh.length ? fresh : allCandidates;
 
   for (const candidate of candidates) {
     if (blockedProviders.has(candidate.providerName)) continue;
@@ -207,6 +223,10 @@ export async function routeAiComplete(request: AiRequest): Promise<RouteResult> 
       attempts.push({ provider: candidate.providerName, model: candidate.model, status: "failed", message, at });
       logger.warn("AI provider attempt failed", { provider: candidate.providerName, model: candidate.model, message });
       if (error instanceof Error && canSkipProvider(error)) blockedProviders.add(candidate.providerName);
+      // Rate-limited free model → cool it down so we cycle to the next one.
+      if (error instanceof Error && isRateLimited(error)) {
+        rateLimitedUntil.set(candidate.model, Date.now() + RATE_LIMIT_COOLDOWN_MS);
+      }
     }
   }
 

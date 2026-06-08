@@ -1,3 +1,30 @@
+export type NewsTickerItem = {
+  source: string;
+  title: string;
+  url?: string;
+  image?: string;
+};
+
+export type SystemStatus = {
+  uptime: number;
+  hostUptime: number;
+  cpu: { usage: number; cores: number; model: string };
+  memory: {
+    used: number;
+    total: number;
+    percent: number;
+  };
+  disk:
+    | {
+        free: number;
+        total: number;
+        percent: number;
+      }
+    | null;
+  temp: number | null;
+  gpu: { usage: number; memUsed: number | null; memTotal: number | null } | null;
+};
+
 export type AuraContext = Record<string, unknown> & {
   messages?: Array<{ name?: string; preview?: string; unread?: boolean; needsReply?: boolean }>;
   name?: string;

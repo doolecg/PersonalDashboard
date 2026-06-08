@@ -25,7 +25,7 @@ export const defaultPreferences: DashboardPreferences = {
   showBackground: true,
   showTicker: true,
   location: null,
-  defaultDashboard: "home"
+  defaultDashboard: "news"
 };
 
 export function getDashboardLocationKey(location: DashboardLocation | null): string {
