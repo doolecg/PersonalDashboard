@@ -27,7 +27,7 @@ export async function getTechSummary(force = false): Promise<TechSummary> {
   } else {
     try {
       const prompt = [
-        "Summarise today's top tech and developer news in 3–4 sentences. Lead with the most impactful story.",
+        "Summarise today's top tech news in 3–4 sentences, covering AI advances, developer tools/releases, and hardware announcements. Lead with the most impactful story.",
         "Plain text only: no markdown, no bullet points, no numbering, no quotation marks.",
         "Headlines:",
         ...headlines.map((item) => `- ${item.source}: ${item.title}`)

@@ -5,17 +5,34 @@ type NewsTickerEnvConfig = {
 
 type FetchLike = typeof fetch;
 
+const RSS_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (compatible; AuraDashboard/1.0)",
+  "Accept": "application/rss+xml, application/xml, text/xml, */*"
+};
+
+async function fetchRss(url: string): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    return await fetch(url, { headers: RSS_HEADERS, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export type NewsTickerItem = {
   source: string;
   title: string;
   url: string;
   image?: string;
+  description?: string;
 };
 
 const DEFAULT_TICKER_SOURCE = "Update";
 const RSS_ITEM_PATTERN = /<item\b[^>]*>([\s\S]*?)<\/item>/gi;
 const RSS_TITLE_PATTERN = /<title>([\s\S]*?)<\/title>/i;
 const RSS_LINK_PATTERN = /<link>([\s\S]*?)<\/link>/i;
+const RSS_DESC_PATTERN = /<description>([\s\S]*?)<\/description>/i;
 
 // Image can live in a few RSS extensions; try them in rough order of quality.
 const RSS_IMAGE_PATTERNS = [
@@ -108,9 +125,11 @@ function extractRssItems(xml: string, source: string): NewsTickerItem[] {
       const title = decodeXmlEntities(itemXml.match(RSS_TITLE_PATTERN)?.[1] ?? "");
       const url = decodeXmlEntities(itemXml.match(RSS_LINK_PATTERN)?.[1] ?? "");
       const image = extractImage(itemXml);
+      const rawDesc = itemXml.match(RSS_DESC_PATTERN)?.[1] ?? "";
+      const description = rawDesc ? decodeXmlEntities(rawDesc).slice(0, 300).trim() || undefined : undefined;
 
       if (!title) return null;
-      return { source, title, url, image };
+      return { source, title, url, image, description };
     })
     .filter((item): item is NewsTickerItem => item !== null);
 }

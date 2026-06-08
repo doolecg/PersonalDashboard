@@ -110,7 +110,7 @@ export async function getNewsSummary(): Promise<NewsSummary> {
   return response.json() as Promise<NewsSummary>;
 }
 
-export type TldrHeadline = { title: string; url?: string; image?: string; source: string };
+export type TldrHeadline = { title: string; url?: string; image?: string; source: string; description?: string };
 export type TldrTopic = { label: string; tldr: string; source: "ai" | "headlines"; headlines: TldrHeadline[] };
 export type TldrSummary = { topics: TldrTopic[] };
 

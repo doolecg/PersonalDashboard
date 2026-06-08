@@ -169,8 +169,12 @@ export function LifeSummaryCard() {
                             <span className="tldr-thumb tldr-thumb-empty" aria-hidden />
                           )}
                           <span className="tldr-hl-text">
-                            <span className="tldr-hl-src">{h.source}</span>
                             <span className="tldr-hl-title">{h.title}</span>
+                            {h.description ? (
+                              <span className="tldr-hl-desc">{h.description}</span>
+                            ) : (
+                              <span className="tldr-hl-src">{h.source}</span>
+                            )}
                           </span>
                         </a>
                       ))}

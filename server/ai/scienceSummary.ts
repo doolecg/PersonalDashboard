@@ -27,7 +27,7 @@ export async function getScienceSummary(force = false): Promise<ScienceSummary> 
   } else {
     try {
       const prompt = [
-        "Summarise today's most interesting science discoveries or research in 3–4 sentences. Lead with the most significant finding.",
+        "Summarise today's most interesting space and science news in 3–4 sentences. Prioritise space exploration, launches, and astronomy; include other notable science findings if space news is sparse. Lead with the most significant story.",
         "Plain text only: no markdown, no bullet points, no numbering, no quotation marks.",
         "Headlines:",
         ...headlines.map((item) => `- ${item.source}: ${item.title}`)

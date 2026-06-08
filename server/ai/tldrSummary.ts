@@ -3,7 +3,7 @@ import { resolveTickerItemsBalanced, type NewsTickerItem } from "../newsTicker.j
 import { messagesFromPrompt } from "../providers/aiProvider.js";
 import { routeAiComplete } from "../providers/aiRuntime.js";
 
-export type TldrHeadline = { title: string; url?: string; image?: string; source: string };
+export type TldrHeadline = { title: string; url?: string; image?: string; source: string; description?: string };
 export type TldrTopic = { label: string; tldr: string; source: "ai" | "headlines"; headlines: TldrHeadline[] };
 export type TldrSummary = { topics: TldrTopic[] };
 
@@ -11,10 +11,10 @@ const ttlMs = 15 * 60 * 1000;
 let cache: { at: number; data: TldrSummary } | null = null;
 
 const TOPICS: Array<{ label: string; feeds: string }> = [
+  { label: "Tech", feeds: env.designTopicRssFeeds },
   { label: "AI", feeds: env.aiTopicRssFeeds },
   { label: "Dev", feeds: env.devTopicRssFeeds },
-  { label: "Design", feeds: env.designTopicRssFeeds },
-  { label: "IT", feeds: env.itTopicRssFeeds }
+  { label: "DevOps", feeds: env.itTopicRssFeeds }
 ];
 
 async function topicTldr(label: string, feeds: string): Promise<TldrTopic> {
@@ -24,14 +24,19 @@ async function topicTldr(label: string, feeds: string): Promise<TldrTopic> {
     title: item.title,
     url: item.url || undefined,
     image: item.image || undefined,
-    source: item.source
+    source: item.source,
+    description: item.description
   }));
 
   if (!pool.length) return { label, tldr: `No ${label} news right now.`, source: "headlines" as const, headlines: [] };
 
+  // Use the first item description as the topic tldr if available (TLDR newsletters provide their own summaries).
+  const firstDesc = pool.find((item) => item.description)?.description;
+  if (firstDesc) return { label, tldr: firstDesc, source: "headlines", headlines };
+
   try {
     const prompt = [
-      `Write a single punchy 10-15 word TLDR of today's top ${label} news.`,
+      `Write a single punchy 10-15 word TLDR of today's top ${label} newsletter stories.`,
       "No preamble, no markdown, no quotation marks — just the sentence itself.",
       "Headlines:",
       ...pool.map((item) => `- ${item.source}: ${item.title}`)
