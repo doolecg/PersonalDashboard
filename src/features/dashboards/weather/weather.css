@@ -52,41 +52,41 @@
   min-width: 0;
 }
 .planner .wx-temp {
-  font-size: 58px;
+  font-size: 48px;
   font-weight: 200;
   line-height: 1;
   letter-spacing: -0.03em;
 }
 .planner .wx-loc {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
 }
 .planner .wx-cond {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--ink-dim);
   font-weight: 500;
 }
 .planner .wx-range {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   margin-top: 1px;
 }
 .planner .wx-hero-right {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
 }
 .planner .wx-hero-glyph {
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   flex: none;
   opacity: 0.92;
 }
 .planner .wx-summary {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--ink-dim);
-  max-width: 320px;
+  max-width: 280px;
   text-align: right;
 }
 
@@ -244,16 +244,16 @@
 .planner .wx-tile {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   min-height: 0;
-  padding: 12px 14px;
+  padding: 10px 12px;
   overflow: hidden;
 }
 .planner .wx-tile-head {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10px;
+  gap: 5px;
+  font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -265,7 +265,7 @@
   overflow: hidden;
 }
 .planner .wx-big {
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -354,5 +354,32 @@
     grid-column: span 2;
     grid-template-rows: repeat(2, 1fr);
     grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  /* Hourly strip: show 8 hours with horizontal scroll instead of squishing 24 */
+  .planner .wx-hourly {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .planner .wx-hourly::-webkit-scrollbar {
+    display: none;
+  }
+  .planner .wx-hour {
+    flex: none;
+    min-width: 52px;
+  }
+
+  /* Windy map: taller 4:5 portrait ratio on phone */
+  .planner .wx-map {
+    min-height: 0;
+  }
+  .planner .wx-map-frame {
+    aspect-ratio: 4 / 5;
+    flex: none;
+    height: auto;
   }
 }

@@ -1732,18 +1732,53 @@
     padding: 14px 14px 20px;
   }
   .planner .hdr {
-    flex-wrap: wrap;
-    gap: 14px;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .planner .hdr-l {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    text-align: center;
+  }
+  .planner .hdr-greet {
+    font-size: 17px;
   }
   .planner .hdr-r {
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+  .planner .hdr-time .t {
+    font-size: 20px;
+  }
+  .planner .hdr-time .d {
+    font-size: 11px;
+  }
+  .planner .tabs {
+    gap: 2px;
+    padding: 3px;
+    overflow-x: auto;
+    flex-shrink: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+  .planner .tab {
+    font-size: 12px;
+    padding: 5px 10px;
+    white-space: nowrap;
   }
   .planner .body {
     grid-template-columns: 1fr;
     flex: none;
+    height: auto;
   }
+  /* Force any span-2 cols back to single column on mobile */
   .planner .col {
+    grid-column: span 1 !important;
     min-height: 0;
   }
   /* Cards size to their content once stacked instead of stretching a column. */
@@ -1764,6 +1799,10 @@
   .planner .glass-pad {
     padding: 18px;
   }
+  /* Ensure the layout has space so the FAB doesn't overlap last card */
+  .planner .layout {
+    padding-bottom: 96px;
+  }
 
   /* Phone: single stacked, scrolling column (AI summary first). */
   .planner .body-mobile {
@@ -1779,6 +1818,44 @@
   /* leave room at the bottom so the floating chat button never covers content */
   .planner .layout {
     padding-bottom: 88px;
+  }
+
+  /* Desktop dashboard: replace floating windows with a stacked scroll list */
+  .planner .desk-area {
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 8px 0 80px;
+  }
+  .planner .desk-win {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0;
+    flex: none;
+  }
+  .planner .desk-win-body {
+    max-height: 420px;
+  }
+  .planner .desk-resize {
+    display: none;
+  }
+  .planner .desk-dock {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    overflow-x: auto;
+    max-width: calc(100vw - 28px);
+    scrollbar-width: none;
+  }
+  .planner .desk-dock::-webkit-scrollbar {
+    display: none;
+  }
+  .planner .desk-titlebar {
+    cursor: default;
   }
 
 }
