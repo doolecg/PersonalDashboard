@@ -104,8 +104,8 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  min-width: 0;
-  flex: 1 1 0;
+  flex: none;
+  min-width: 48px;
 }
 .planner .wx-hour-label {
   font-size: 11.5px;
@@ -158,7 +158,12 @@
 }
 .planner .wx-forecast {
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.planner .wx-forecast .wx-card-title {
+  flex: none;
 }
 .planner .wx-map {
   min-height: 0;
@@ -186,13 +191,15 @@
   display: block;
 }
 
-/* 14-day rows */
+/* 14-day rows — flex:1 so they fill the forecast card evenly */
 .planner .wx-frow {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 5px 0;
+  padding: 0;
   font-size: 14px;
+  flex: 1;
+  min-height: 28px;
 }
 .planner .wx-fday {
   width: 44px;
@@ -340,6 +347,14 @@
   font-size: 11.5px;
   color: var(--ink-faint);
   padding: 4px 0 2px;
+}
+
+/* Ultrawide: shrink hour columns so more of the 48 rendered hours are visible */
+@media (min-width: 1600px) {
+  .planner .wx-hour { min-width: 38px; }
+}
+@media (min-width: 2100px) {
+  .planner .wx-hour { min-width: 30px; }
 }
 
 @media (max-width: 1180px) {
