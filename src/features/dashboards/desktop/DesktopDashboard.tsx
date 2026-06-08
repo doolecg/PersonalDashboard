@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { LayoutGrid, RotateCcw, X } from "lucide-react";
 import type { TickerItem } from "@/app/shell/types";
 import type { DashboardId } from "@/features/dashboards/dashboards";
 import { PlannerShell } from "../planner/PlannerShell";
@@ -23,6 +23,7 @@ export function DesktopDashboard(props: DesktopDashboardProps) {
   const { layout, order, move, resize, snap, toggle, focus, reset } = useDesktopLayout();
   const areaRef = useRef<HTMLDivElement>(null);
   const [bounds, setBounds] = useState({ w: 0, h: 0 });
+  const [launcherOpen, setLauncherOpen] = useState(false);
 
   useEffect(() => {
     const el = areaRef.current;
@@ -61,7 +62,7 @@ export function DesktopDashboard(props: DesktopDashboardProps) {
           );
         })}
 
-        {/* Dock / taskbar: toggle panels + reset layout */}
+        {/* Dock / taskbar: toggle panels + reset layout — desktop only */}
         <div className="desk-dock glass">
           {PANELS.map((panel) => (
             <button
@@ -84,6 +85,43 @@ export function DesktopDashboard(props: DesktopDashboardProps) {
             <span>Reset</span>
           </button>
         </div>
+
+        {/* Mobile-only right-side launcher */}
+        {launcherOpen && (
+          <div className="desk-mob-menu glass">
+            {PANELS.map((panel) => (
+              <button
+                key={panel.id}
+                type="button"
+                className={`desk-mob-item${layout[panel.id]?.visible ? " active" : ""}`}
+                onClick={() => {
+                  if (!layout[panel.id]?.visible) focus(panel.id);
+                  toggle(panel.id);
+                }}
+              >
+                {panel.icon}
+                <span>{panel.title}</span>
+              </button>
+            ))}
+            <div className="desk-mob-sep" />
+            <button
+              type="button"
+              className="desk-mob-item"
+              onClick={() => { reset(); setLauncherOpen(false); }}
+            >
+              <RotateCcw size={14} />
+              <span>Reset layout</span>
+            </button>
+          </div>
+        )}
+        <button
+          type="button"
+          className="desk-mob-fab"
+          aria-label={launcherOpen ? "Close launcher" : "Open launcher"}
+          onClick={() => setLauncherOpen((v) => !v)}
+        >
+          {launcherOpen ? <X size={20} /> : <LayoutGrid size={20} />}
+        </button>
       </div>
     </PlannerShell>
   );

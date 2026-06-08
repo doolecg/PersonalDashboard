@@ -1332,6 +1332,11 @@
   flex-direction: column;
   min-height: 0;
   border-radius: 18px;
+  /* Override the default glass white highlight — windows look crisper without it */
+  background: linear-gradient(157deg, rgba(74, 80, 124, 0.55) 0%, rgba(28, 32, 60, 0.72) 100%);
+}
+.planner .desk-win::before {
+  display: none;
 }
 .planner .desk-titlebar {
   display: flex;
@@ -1827,7 +1832,7 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-    padding: 8px 0 80px;
+    padding: 8px 0 100px;
   }
   .planner .desk-win {
     position: static !important;
@@ -1842,22 +1847,83 @@
   .planner .desk-resize {
     display: none;
   }
-  .planner .desk-dock {
-    position: fixed;
-    bottom: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    overflow-x: auto;
-    max-width: calc(100vw - 28px);
-    scrollbar-width: none;
-  }
-  .planner .desk-dock::-webkit-scrollbar {
-    display: none;
-  }
   .planner .desk-titlebar {
     cursor: default;
   }
+  /* Hide the bottom dock on mobile — replaced by the right-side launcher FAB */
+  .planner .desk-dock {
+    display: none !important;
+  }
+  /* Right-side launcher FAB — hidden on desktop, shown on mobile */
+  .planner .desk-mob-fab {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    right: 20px;
+    bottom: 86px;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    cursor: pointer;
+    background: rgba(22, 26, 58, 0.96);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    z-index: 120;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .planner .desk-mob-fab:active {
+    transform: scale(0.93);
+  }
+  .planner .desk-mob-menu {
+    position: fixed;
+    right: 14px;
+    bottom: 140px;
+    width: 196px;
+    z-index: 119;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-radius: 18px;
+  }
+  .planner .desk-mob-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--ink-dim);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: background 0.12s, color 0.12s;
+  }
+  .planner .desk-mob-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+  .planner .desk-mob-item.active {
+    background: var(--accent);
+    color: #fff;
+  }
+  .planner .desk-mob-sep {
+    height: 1px;
+    margin: 3px 8px;
+    background: rgba(255, 255, 255, 0.12);
+  }
 
+}
+
+/* Desktop launcher FAB/menu hidden on non-mobile */
+.planner .desk-mob-fab,
+.planner .desk-mob-menu {
+  display: none;
 }
 
 /* ---------- Floating AI live-chat (all viewports) ---------- */
