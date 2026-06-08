@@ -1,5 +1,5 @@
 import { env } from "../env.js";
-import { resolveTickerItems, type NewsTickerItem } from "../newsTicker.js";
+import { resolveTickerItemsBalanced, type NewsTickerItem } from "../newsTicker.js";
 import { messagesFromPrompt } from "../providers/aiProvider.js";
 import { routeAiComplete } from "../providers/aiRuntime.js";
 
@@ -15,11 +15,11 @@ let cache: { at: number; data: TechSummary } | null = null;
 export async function getTechSummary(force = false): Promise<TechSummary> {
   if (!force && cache && Date.now() - cache.at < ttlMs) return cache.data;
 
-  const items = await resolveTickerItems({
+  const items = await resolveTickerItemsBalanced({
     footerTickerItems: "",
     newsRssFeeds: env.techNewsRssFeeds
-  });
-  const headlines = items.slice(0, 24);
+  }, 5);
+  const headlines = items.slice(0, 20);
 
   let data: TechSummary;
   if (!headlines.length) {

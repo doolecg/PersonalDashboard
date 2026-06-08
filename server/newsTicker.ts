@@ -136,3 +136,44 @@ export async function resolveTickerItems(config: NewsTickerEnvConfig, fetchFeed:
   const articleTitles = titleGroups.flat();
   return articleTitles.length ? articleTitles : fallbackItems;
 }
+
+/**
+ * Like resolveTickerItems but guarantees one article per source before cycling
+ * back for second articles. Each feed contributes at most `maxPerFeed` items so
+ * no single source can dominate the result.
+ */
+export async function resolveTickerItemsBalanced(
+  config: NewsTickerEnvConfig,
+  maxPerFeed = 5,
+  fetchFeed: FetchLike = fetch,
+  random: () => number = Math.random
+): Promise<NewsTickerItem[]> {
+  const fallbackItems = parseTickerItems(config.footerTickerItems);
+  const feedEntries = shuffleItems(parseFeedEntries(config.newsRssFeeds), random);
+
+  if (!feedEntries.length) return fallbackItems;
+
+  const groups = await Promise.all(
+    feedEntries.map(async ({ source, url }) => {
+      try {
+        const response = await fetchFeed(url);
+        if (!response.ok) return [] as NewsTickerItem[];
+        // Shuffle within each feed so refresh gives different articles.
+        return shuffleItems(extractRssItems(await response.text(), source), random).slice(0, maxPerFeed);
+      } catch {
+        return [] as NewsTickerItem[];
+      }
+    })
+  );
+
+  // Round-robin: one article from each feed in turn, cycling until all exhausted.
+  const result: NewsTickerItem[] = [];
+  const maxDepth = Math.max(0, ...groups.map((g) => g.length));
+  for (let depth = 0; depth < maxDepth; depth++) {
+    for (const group of groups) {
+      const item = group[depth];
+      if (item) result.push(item);
+    }
+  }
+  return result.length ? result : fallbackItems;
+}

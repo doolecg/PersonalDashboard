@@ -1,5 +1,5 @@
 import { env } from "../env.js";
-import { resolveTickerItems, type NewsTickerItem } from "../newsTicker.js";
+import { resolveTickerItemsBalanced, type NewsTickerItem } from "../newsTicker.js";
 import { messagesFromPrompt } from "../providers/aiProvider.js";
 import { routeAiComplete } from "../providers/aiRuntime.js";
 
@@ -19,11 +19,11 @@ export async function getNewsSummary(force = false): Promise<NewsSummary> {
   // Merge global sources with local NEWS_RSS_FEEDS so Top Stories always has
   // variety across both national/world feeds and user-configured local feeds.
   const combined = [env.globalNewsRssFeeds, env.newsRssFeeds].filter(Boolean).join(",");
-  const items = await resolveTickerItems({
+  const items = await resolveTickerItemsBalanced({
     footerTickerItems: env.footerTickerItems,
     newsRssFeeds: combined
-  });
-  const headlines = items.slice(0, 24);
+  }, 5);
+  const headlines = items.slice(0, 25);
 
   let data: NewsSummary;
   if (!headlines.length) {

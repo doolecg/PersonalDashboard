@@ -358,27 +358,85 @@
 }
 
 @media (max-width: 720px) {
-  /* Hourly strip: show 8 hours with horizontal scroll instead of squishing 24 */
+  /* Full weather page: allow scrolling through stacked sections */
+  .planner .wx {
+    overflow-y: auto;
+    gap: 10px;
+  }
+
+  /* Stack forecast / map / tiles into a single column */
+  .planner .wx-grid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    gap: 10px;
+  }
+  .planner .wx-tiles {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    grid-column: 1;
+  }
+
+  /* Hourly: horizontal scroll, compact row height */
   .planner .wx-hourly {
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    height: 130px;
   }
   .planner .wx-hourly::-webkit-scrollbar {
     display: none;
   }
   .planner .wx-hour {
     flex: none;
-    min-width: 52px;
+    min-width: 44px;
+    gap: 3px;
+  }
+  .planner .wx-hour-label {
+    font-size: 10px;
+  }
+  .planner .wx-hour-icon {
+    width: 16px;
+    height: 16px;
+  }
+  .planner .wx-hour-temp {
+    font-size: 12px;
+  }
+  .planner .wx-hour-pop {
+    font-size: 9px;
+    min-height: 10px;
   }
 
-  /* Windy map: taller 4:5 portrait ratio on phone */
+  /* 10-day forecast: tighter rows */
+  .planner .wx-frow {
+    padding: 3px 0;
+    font-size: 12px;
+    gap: 7px;
+  }
+  .planner .wx-fday {
+    width: 36px;
+    font-size: 11.5px;
+  }
+  .planner .wx-ficon {
+    width: 15px;
+    height: 15px;
+  }
+  .planner .wx-fpop {
+    font-size: 9.5px;
+    width: 26px;
+  }
+  .planner .wx-flo,
+  .planner .wx-fhi {
+    width: 22px;
+    font-size: 11.5px;
+  }
+
+  /* Windy map: square on mobile */
   .planner .wx-map {
     min-height: 0;
   }
   .planner .wx-map-frame {
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 1 / 1;
     flex: none;
     height: auto;
   }
