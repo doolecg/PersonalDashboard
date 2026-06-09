@@ -78,10 +78,26 @@ export function getServerConfig(): Record<ConfigField, string> {
   return { localAiProvider: provider, localAiBaseUrl: active.baseUrl, localAiModel: active.model };
 }
 
+/** Block cloud-metadata and non-HTTP schemes; allows localhost and LAN addresses. */
+function isSafeLocalUrl(raw: string): boolean {
+  if (!raw.trim()) return true; // empty → falls back to env default
+  try {
+    const parsed = new URL(raw.trim());
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
+    // Block link-local and cloud metadata endpoints (169.254.x.x, fe80::)
+    if (/^169\.254\./.test(host) || /^fe80:/i.test(host)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Query a running local server for the model(s) it currently has loaded.
 // LM Studio / llama.cpp expose the OpenAI-compatible /v1/models; Ollama exposes
 // its native /api/tags. Returns model ids/names, empty if unreachable.
 export async function detectLocalModels(target: LocalProvider, baseUrlInput: string): Promise<string[]> {
+  if (!isSafeLocalUrl(baseUrlInput)) return [];
   const raw = baseUrlInput.trim() || envDefaults[target].baseUrl;
   try {
     if (target === "ollama") {

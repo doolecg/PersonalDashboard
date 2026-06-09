@@ -53,6 +53,11 @@ app.use("/api/events", createCollectionRouter("events"));
 app.use("/api/settings", settingsRouter);
 app.use("/api/google", googleRouter);
 
+// Catch unmatched /api/* routes before the SPA fallback to avoid serving index.html for them.
+app.use("/api", (_req, res) => {
+  res.status(404).json({ message: "Not found" });
+});
+
 if (env.nodeEnv === "production") {
   const distPath = path.resolve(root, "dist");
   app.use(express.static(distPath));

@@ -1,16 +1,25 @@
 type LogLevel = "info" | "warn" | "error";
 type LogMeta = Record<string, unknown>;
 
-const sensitiveValues = () =>
-  Object.entries(process.env)
-    .filter(([key, value]) => value && /API_KEY|TOKEN|SECRET|PASSWORD|AUTH/i.test(key))
-    .map(([, value]) => value as string)
-    .filter((value) => value.length > 6);
+export type LogEntry = { time: string; level: LogLevel; message: string };
+
+const LOG_BUFFER_MAX = 120;
+const logBuffer: LogEntry[] = [];
+
+export function getRecentLogs(): LogEntry[] {
+  return [...logBuffer];
+}
+
+// Computed once at startup; process.env doesn't change after boot.
+const _cachedSensitiveValues: string[] = Object.entries(process.env)
+  .filter(([key, val]) => val && /API_KEY|TOKEN|SECRET|PASSWORD|AUTH/i.test(key))
+  .map(([, val]) => val as string)
+  .filter((val) => val.length > 6);
 
 function scrub(input: string) {
   let output = input.replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [redacted]");
   output = output.replace(/([?&](?:key|api_key|token)=)[^&\s]+/gi, "$1[redacted]");
-  for (const value of sensitiveValues()) output = output.split(value).join("[redacted]");
+  for (const value of _cachedSensitiveValues) output = output.split(value).join("[redacted]");
   return output;
 }
 
@@ -34,12 +43,13 @@ export function formatError(error: unknown) {
 }
 
 function write(level: LogLevel, message: string, meta?: LogMeta) {
-  const line = {
-    time: new Date().toISOString(),
-    level,
-    message: scrub(message),
-    ...(meta ? { meta } : {})
-  };
+  const time = new Date().toISOString();
+  const clean = scrub(message);
+  const entry: LogEntry = { time, level, message: clean };
+  logBuffer.push(entry);
+  if (logBuffer.length > LOG_BUFFER_MAX) logBuffer.shift();
+
+  const line = { time, level, message: clean, ...(meta ? { meta } : {}) };
   const output = serialize(line);
   if (level === "error") console.error(output);
   else if (level === "warn") console.warn(output);

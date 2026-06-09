@@ -1,14 +1,15 @@
-import { NewsFeedPanel } from "./NewsFeedPanel";
+import { Telescope } from "lucide-react";
 import { useScienceNews } from "./useNewsSummary";
+import { NewsCard } from "./NewsCard";
 
 export function ScienceNewsCard() {
   const { data, loading } = useScienceNews();
-
   return (
-    <NewsFeedPanel
-      title="Science"
-      summary={data?.summary ?? ""}
-      headlines={data?.headlines ?? []}
+    <NewsCard
+      icon={<Telescope size={14} />}
+      title="Science &amp; Space"
+      endpoint="/api/ai/science-summary"
+      data={data}
       loading={loading}
     />
   );

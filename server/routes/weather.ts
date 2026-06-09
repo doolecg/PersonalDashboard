@@ -31,17 +31,17 @@ weatherRouter.get("/geocode", async (req, res, next) => {
   }
 });
 
-// The AI report is slow and costs tokens, so cache it per forecast refresh.
-let reportCache: { key: string; report: WeatherReport } | null = null;
+// The AI report is slow and costs tokens, so cache per location+forecast-refresh.
+const reportCache = new Map<string, WeatherReport>();
+const REPORT_CACHE_MAX = 10;
 
 weatherRouter.get("/report", async (req, res, next) => {
   try {
     const payload = await getWeatherWidgetPayload(locationFromQuery(req));
     const key = `${payload.current.location}:${payload.meta.updatedAt}`;
 
-    if (reportCache?.key === key) {
-      return res.json(reportCache.report);
-    }
+    const cached = reportCache.get(key);
+    if (cached) return res.json(cached);
 
     const insight = buildWeatherInsight(payload);
     let report: WeatherReport;
@@ -54,7 +54,10 @@ weatherRouter.get("/report", async (req, res, next) => {
       report = { report: buildFallbackReport(payload), insight, source: "generated" };
     }
 
-    reportCache = { key, report };
+    if (reportCache.size >= REPORT_CACHE_MAX) {
+      reportCache.delete(reportCache.keys().next().value!);
+    }
+    reportCache.set(key, report);
     res.json(report);
   } catch (error) {
     next(error);

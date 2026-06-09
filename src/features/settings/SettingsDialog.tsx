@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
-import { Clock, Image, LayoutGrid, MapPin, Newspaper, RotateCcw, Search, Upload, User } from "lucide-react";
+import { Clock, Image, LayoutGrid, MapPin, Newspaper, Search, Upload, User } from "lucide-react";
 import { geocodeLocation, type GeocodeLocationResult } from "@/app/apiClient";
 import { setPreference, type DashboardLocation } from "@/app/preferences/preferences";
 import { usePreferences } from "@/app/preferences/usePreferences";
@@ -19,33 +19,19 @@ import { LocalAiSettings } from "./LocalAiSettings";
 import { ModelSettings } from "./ModelSettings";
 import { SecretsSettings } from "./SecretsSettings";
 
-const layoutStorageKey = "dashboard-card-layout";
 export const settingsDialogContentClassName =
-  "dark max-h-[88vh] w-[95vw] max-w-[95vw] overflow-y-auto bg-background/95 text-foreground sm:max-w-2xl lg:max-w-4xl";
+  "aura-modal-content dark bg-background max-h-[90vh] w-[95vw] max-w-[95vw] overflow-y-auto text-foreground sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl";
 
 type SettingsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  isEditingCards: boolean;
-  onToggleEditingCards: () => void;
   activeDashboard: DashboardId;
   onSelectDashboard: (dashboard: DashboardId) => void;
 };
 
-function resetLayout() {
-  try {
-    window.localStorage.removeItem(layoutStorageKey);
-  } catch {
-    // ignore storage access errors
-  }
-  window.location.reload();
-}
-
 export function SettingsDialog({
   open,
   onOpenChange,
-  isEditingCards,
-  onToggleEditingCards,
   activeDashboard,
   onSelectDashboard,
 }: SettingsDialogProps) {
@@ -151,10 +137,10 @@ export function SettingsDialog({
 
           <SettingRow
             icon={<LayoutGrid className="h-4 w-4" />}
-            title="Dashboard"
-            description="Switch dashboards now, and set which one loads by default."
+            title="Default dashboard"
+            description="Set which dashboard loads on startup."
           >
-            <div className="flex items-center gap-1 rounded-2xl border border-border/60 bg-background/40 p-1">
+            <div className="flex items-center gap-1 rounded-2xl border border-white/15 bg-white/5 p-1">
               {dashboardIds.map((id) => (
                 <button
                   key={id}
@@ -163,6 +149,7 @@ export function SettingsDialog({
                   onClick={() => {
                     onSelectDashboard(id);
                     setPreference("defaultDashboard", id);
+                    onOpenChange(false);
                   }}
                   className={`rounded-xl px-3 py-1.5 text-sm font-medium transition ${
                     activeDashboard === id
@@ -174,28 +161,6 @@ export function SettingsDialog({
                 </button>
               ))}
             </div>
-          </SettingRow>
-
-          <SettingRow
-            icon={<LayoutGrid className="h-4 w-4" />}
-            title="Edit dashboard layout"
-            description="Drag, resize and reorder cards on the grid."
-          >
-            <Switch
-              checked={isEditingCards}
-              onCheckedChange={onToggleEditingCards}
-              aria-label="Toggle card editing"
-            />
-          </SettingRow>
-
-          <SettingRow
-            icon={<RotateCcw className="h-4 w-4" />}
-            title="Reset layout"
-            description="Restore every card to its default position and size."
-          >
-            <Button variant="outline" size="sm" type="button" onClick={resetLayout}>
-              Reset
-            </Button>
           </SettingRow>
 
         </div>
