@@ -182,6 +182,18 @@ textarea {
   animation: shell-ticker-scroll var(--shell-ticker-duration, 48s) linear infinite;
 }
 
+/* Shared dark glass used by settings, modals, and any portal-rendered overlay */
+.aura-modal-content {
+  background: linear-gradient(160deg, rgba(20, 23, 50, 0.98) 0%, rgba(10, 12, 30, 0.99) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 24px 60px rgba(4, 6, 20, 0.88), inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+  color: #fff !important;
+}
+.aura-modal-content .text-foreground { color: #fff !important; }
+.aura-modal-content .text-muted-foreground { color: rgba(255, 255, 255, 0.55) !important; }
+.aura-modal-content [data-slot="dialog-title"] { color: #fff !important; }
+.aura-modal-content [data-slot="dialog-description"] { color: rgba(255, 255, 255, 0.55) !important; }
+
 @keyframes card-jiggle {
   from {
     transform: translateY(-0.5px) rotate(-0.22deg);

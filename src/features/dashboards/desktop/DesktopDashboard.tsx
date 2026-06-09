@@ -16,7 +16,6 @@ export interface DesktopDashboardProps {
   onSelectDashboard: (dashboard: DashboardId) => void;
 }
 
-// Leave room at the bottom so snapped/maximized windows don't hide under the dock.
 const DOCK_RESERVE = 56;
 
 export function DesktopDashboard(props: DesktopDashboardProps) {
@@ -34,6 +33,46 @@ export function DesktopDashboard(props: DesktopDashboardProps) {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  // Close launcher when clicking outside
+  useEffect(() => {
+    if (!launcherOpen) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".desk-launcher") && !target.closest(".desk-start-btn")) {
+        setLauncherOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [launcherOpen]);
+
+  const launcherPanel = launcherOpen ? (
+    <div className="desk-launcher glass">
+      <div className="desk-launcher-grid">
+        {PANELS.map((panel) => (
+          <button
+            key={panel.id}
+            type="button"
+            className={`desk-launcher-item${layout[panel.id]?.visible ? " active" : ""}`}
+            onClick={() => {
+              if (!layout[panel.id]?.visible) focus(panel.id);
+              toggle(panel.id);
+            }}
+            title={`${layout[panel.id]?.visible ? "Hide" : "Show"} ${panel.title}`}
+          >
+            <span className="desk-launcher-icon">{panel.icon}</span>
+            <span className="desk-launcher-label">{panel.title}</span>
+          </button>
+        ))}
+      </div>
+      <div className="desk-launcher-sep" />
+      <button type="button" className="desk-launcher-reset" onClick={() => { reset(); setLauncherOpen(false); }}>
+        <RotateCcw size={13} />
+        Reset layout
+      </button>
+    </div>
+  ) : null;
 
   return (
     <PlannerShell {...props}>
@@ -62,67 +101,54 @@ export function DesktopDashboard(props: DesktopDashboardProps) {
           );
         })}
 
-        {/* Dock / taskbar: toggle panels + reset layout — desktop only */}
+        {/* Desktop dock — single "Start" button */}
         <div className="desk-dock glass">
+          {launcherPanel}
+          <button
+            type="button"
+            className={`desk-start-btn${launcherOpen ? " active" : ""}`}
+            onClick={() => setLauncherOpen((v) => !v)}
+            aria-label={launcherOpen ? "Close launcher" : "Open launcher"}
+            aria-expanded={launcherOpen}
+          >
+            {launcherOpen ? <X size={16} /> : <LayoutGrid size={16} />}
+            <span>Apps</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile launcher FAB — outside desk-area so fixed positioning works correctly */}
+      {launcherOpen && (
+        <div className="desk-mob-menu glass">
           {PANELS.map((panel) => (
             <button
               key={panel.id}
               type="button"
-              className={`desk-dock-item${layout[panel.id]?.visible ? " active" : ""}`}
+              className={`desk-mob-item${layout[panel.id]?.visible ? " active" : ""}`}
               onClick={() => {
                 if (!layout[panel.id]?.visible) focus(panel.id);
                 toggle(panel.id);
               }}
-              title={`${layout[panel.id]?.visible ? "Hide" : "Show"} ${panel.title}`}
             >
               {panel.icon}
               <span>{panel.title}</span>
             </button>
           ))}
-          <span className="desk-dock-sep" />
-          <button type="button" className="desk-dock-item" onClick={reset} title="Reset layout">
+          <div className="desk-mob-sep" />
+          <button type="button" className="desk-mob-item" onClick={() => { reset(); setLauncherOpen(false); }}>
             <RotateCcw size={14} />
             <span>Reset</span>
           </button>
         </div>
-
-        {/* Mobile-only right-side launcher */}
-        {launcherOpen && (
-          <div className="desk-mob-menu glass">
-            {PANELS.map((panel) => (
-              <button
-                key={panel.id}
-                type="button"
-                className={`desk-mob-item${layout[panel.id]?.visible ? " active" : ""}`}
-                onClick={() => {
-                  if (!layout[panel.id]?.visible) focus(panel.id);
-                  toggle(panel.id);
-                }}
-              >
-                {panel.icon}
-                <span>{panel.title}</span>
-              </button>
-            ))}
-            <div className="desk-mob-sep" />
-            <button
-              type="button"
-              className="desk-mob-item"
-              onClick={() => { reset(); setLauncherOpen(false); }}
-            >
-              <RotateCcw size={14} />
-              <span>Reset layout</span>
-            </button>
-          </div>
-        )}
-        <button
-          type="button"
-          className="desk-mob-fab"
-          aria-label={launcherOpen ? "Close launcher" : "Open launcher"}
-          onClick={() => setLauncherOpen((v) => !v)}
-        >
-          {launcherOpen ? <X size={20} /> : <LayoutGrid size={20} />}
-        </button>
-      </div>
+      )}
+      <button
+        type="button"
+        className="desk-mob-fab"
+        aria-label={launcherOpen ? "Close launcher" : "Open launcher"}
+        onClick={() => setLauncherOpen((v) => !v)}
+      >
+        {launcherOpen ? <X size={20} /> : <LayoutGrid size={20} />}
+      </button>
     </PlannerShell>
   );
 }

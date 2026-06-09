@@ -1,7 +1,7 @@
 import type { TickerItem } from "@/app/shell/types";
 import type { DashboardId } from "@/features/dashboards/dashboards";
 import { PlannerShell } from "../planner/PlannerShell";
-import { WeatherTallCard } from "../planner/WeatherTallCard";
+import { WeatherSmallCard } from "../planner/WeatherSmallCard";
 import { PlannerCalendarCard } from "../planner/PlannerCalendarCard";
 import { TodoGlassCard } from "../planner/TodoGlassCard";
 import { StickyNotesCard } from "../planner/StickyNotesCard";
@@ -20,7 +20,7 @@ export function ProductivityDashboard(props: ProductivityDashboardProps) {
     <PlannerShell {...props}>
       <div className="body">
         <div className="col">
-          <WeatherTallCard />
+          <WeatherSmallCard />
         </div>
         <div className="col">
           <PlannerCalendarCard />

@@ -10,7 +10,7 @@ const numberFromEnv = (key: string, fallback: number) => {
 };
 
 export const env = {
-  port: numberFromEnv("PORT", 8080),
+  port: numberFromEnv("PORT", 8090),
   nodeEnv: process.env.NODE_ENV ?? "development",
   dataDir: process.env.DATA_DIR ?? "./data",
   defaultCity: process.env.DEFAULT_CITY ?? "Local",
@@ -23,10 +23,10 @@ export const env = {
   globalNewsRssFeeds: process.env.GLOBAL_NEWS_RSS_FEEDS ?? "BBC World|https://feeds.bbci.co.uk/news/world/rss.xml,The Guardian|https://www.theguardian.com/world/rss,Sky News|https://feeds.skynews.com/feeds/rss/home.xml,Al Jazeera|https://www.aljazeera.com/xml/rss/all.xml",
   techNewsRssFeeds: process.env.TECH_NEWS_RSS_FEEDS ?? "Hacker News|https://news.ycombinator.com/rss,Ars Technica|https://feeds.arstechnica.com/arstechnica/index,VentureBeat AI|https://venturebeat.com/category/ai/feed/,Tom's Hardware|https://www.tomshardware.com/feeds/all,The Verge|https://www.theverge.com/rss/tech/index.xml",
   scienceNewsRssFeeds: process.env.SCIENCE_NEWS_RSS_FEEDS ?? "NASA|https://www.nasa.gov/rss/dyn/breaking_news.rss,Space.com|https://www.space.com/feeds/all,SpaceflightNow|https://spaceflightnow.com/feed/,Science Daily|https://www.sciencedaily.com/rss/space_time.xml,ESA|https://www.esa.int/rssfeed/Our_Activities/Space_Science",
-  aiTopicRssFeeds: process.env.AI_NEWS_RSS_FEEDS ?? "TLDR AI|https://tldr.tech/ai/rss",
-  devTopicRssFeeds: process.env.DEV_NEWS_RSS_FEEDS ?? "TLDR Web Dev|https://tldr.tech/webdev/rss",
-  designTopicRssFeeds: process.env.DESIGN_NEWS_RSS_FEEDS ?? "TLDR|https://tldr.tech/rss",
-  itTopicRssFeeds: process.env.IT_NEWS_RSS_FEEDS ?? "TLDR DevOps|https://tldr.tech/devops/rss",
+  aiTopicRssFeeds: process.env.AI_NEWS_RSS_FEEDS ?? "TLDR AI|https://tldr.tech/api/rss/ai",
+  devTopicRssFeeds: process.env.DEV_NEWS_RSS_FEEDS ?? "TLDR Dev|https://tldr.tech/api/rss/webdev",
+  designTopicRssFeeds: process.env.DESIGN_NEWS_RSS_FEEDS ?? "TLDR Tech|https://tldr.tech/api/rss/tech",
+  itTopicRssFeeds: process.env.IT_NEWS_RSS_FEEDS ?? "TLDR DevOps|https://tldr.tech/api/rss/devops",
   aiRoutingMode: process.env.AI_ROUTING_MODE ?? "openrouter",
   aiTimeoutMs: numberFromEnv("AI_TIMEOUT_MS", 30000),
   aiMaxContextChars: numberFromEnv("AI_MAX_CONTEXT_CHARS", 4000),
@@ -61,6 +61,6 @@ export const env = {
   openAiCompatModel: process.env.OPENAI_COMPAT_MODEL ?? "local-model",
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? "http://localhost:8080/api/google/callback",
+  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? "http://localhost:8090/api/google/callback",
   googleCalendarId: process.env.GOOGLE_CALENDAR_ID ?? "primary"
 };

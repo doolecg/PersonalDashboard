@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev        # tsx server/index.ts — Express + Vite middleware on one port (default 8080)
+npm run dev        # tsx server/index.ts — Express + Vite middleware on one port (default 8090)
 npm run build      # tsc (web) + vite build -> dist/, then tsc -p tsconfig.server.json -> dist-server/
 npm run start      # node dist-server/index.js (serves built dist/ in production)
 npm run typecheck  # tsc --noEmit for BOTH web and server tsconfigs
@@ -33,7 +33,7 @@ Copy `.env.example` to `.env` and fill in the provider keys you want to use:
 - **AI providers:** `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` (at least one for AI features)
 - **Local AI:** `OPENAI_COMPATIBLE_BASE_URL` + `OPENAI_COMPATIBLE_MODEL` (Ollama, llama.cpp, etc.)
 - **Google Calendar:** `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` (optional; enables OAuth flow)
-- **Other:** `WEATHER_PROVIDER` (preset; don't change), `PORT` (default 8080)
+- **Other:** `WEATHER_PROVIDER` (preset; don't change), `PORT` (default 8090)
 
 Runtime overrides (secrets, local-AI config) can be edited in Settings UI and are persisted under `./data/` — they take precedence over `.env`. Rotating a key in the UI clears the override, falling back to `.env`.
 
@@ -54,14 +54,14 @@ Two TypeScript projects with separate configs, both `strict`:
 - **Weather** (`server/weather/`): an *ensemble* pipeline, not a single provider. `service.ts` fans out to three sources (Open-Meteo UKMO, Met.no, Open-Meteo ICON) via `Promise.allSettled`, normalizes each (`normalize.ts`), merges them (`ensemble.ts`), and shapes a `WeatherWidgetPayload` for the UI (`presentation.ts`). Results cached in-module for 5 minutes; falls back to stale cache on failure. `WEATHER_PROVIDER` env exists but the ensemble path is what runs. `GET /api/weather` accepts `lat`/`lon`/`city` query params (driven by user preferences). `GET /api/weather/geocode?q=` resolves place names via Open-Meteo geocoding (`geocode.ts`). `GET /api/weather/report` produces a short natural-language summary + a deterministic insight line (`report.ts`): it tries OpenAI and falls back to a generated string, cached per forecast refresh.
 - **AI** has two distinct layers — don't conflate them:
   - *Routing/failover* (`server/providers/aiRuntime.ts` + `server/adapters/`): ordered failover across providers. `AI_ROUTING_MODE` (`auto|openrouter|gemini|openai|local`) selects the candidate list; `auto` tries all OpenRouter free models, then Gemini, OpenAI, then local (Ollama, llama.cpp). Tracks usage/token estimates in-module, exposed via `GET/PATCH /api/ai/status`. Backs `POST /api/ai/chat` and streaming `POST /api/ai/stream` (SSE `token`/`done`/`error` events).
-  - *Tool-calling assistant* (`server/ai/assistant.ts` + `server/ai/tools/`): a separate OpenAI-only chat loop (`POST /api/ai/assistant`) that runs up to `maxToolRounds` of OpenAI function-calling against the tools in `tools/registry.ts` (currently `weatherTool`). To give the assistant a new capability, add an `AssistantTool` to that registry — no other wiring needed.
-  - *Canned summaries* (`server/ai/newsSummary.ts`, `server/ai/lifeSummary.ts`): `GET /api/ai/news-summary` and `POST /api/ai/life-summary` (calendar events → a warm plain-language day summary). Both route through the failover runtime and fall back to a deterministic string when no provider is reachable.
+  - *Tool-calling assistant* (`server/ai/assistant.ts` + `server/ai/tools/`): a separate OpenAI-only chat loop (`POST /api/ai/assistant`) that runs up to `maxToolRounds` of OpenAI function-calling against the tools in `tools/registry.ts`. Current tools: `weatherTool` (read forecast) and the four write-capable tools in `dashboardTools.ts` (`todosTool`, `notesTool`, `remindersTool`, `calendarTool`) — the assistant can add/complete/remove todos, notes, reminders, and local calendar events. To give the assistant a new capability, add an `AssistantTool` to that registry — no other wiring needed.
+  - *Canned summaries* (`server/ai/newsSummary.ts`, `server/ai/scienceSummary.ts`, `server/ai/techSummary.ts`, `server/ai/tldrSummary.ts`, `server/ai/lifeSummary.ts`): topic-specific summaries fed by RSS (global news, science/space, tech/hardware, and TLDR newsletters for Tech/AI/Dev/DevOps topics), plus `POST /api/ai/life-summary` (calendar events → warm plain-language day summary). All route through the failover runtime and fall back to a deterministic string when no provider is reachable.
   - Context is redacted before prompting in all paths (`server/ai/redactContext.ts`).
 
 ### Frontend (`src/`)
 `src/App.tsx` switches between four **dashboards** (`src/features/dashboards/dashboards.ts`, ids `"news" | "weather" | "productivity" | "desktop"`, selected via nav/preferences). All four wrap their content in `<PlannerShell>` (`src/features/dashboards/planner/PlannerShell.tsx`), which provides the common chrome: full-bleed background image, header (greeting, weather pill, profile, nav), footer news ticker, and a slide-in AI chat sidebar.
 
-- **news** (`NewsDashboard.tsx`): weather column + life summary + news summary panel.
+- **news** (`NewsDashboard.tsx`): weather column + life summary + `NewsSummaryCard` (three sections: Global top stories, Tech, Science — each pulling from dedicated RSS feeds and backed by topic-specific AI summaries).
 - **weather** (`WeatherDashboard.tsx`): full-width hero, hourly precipitation strip, 10-day forecast, Windy.com map embed, bento detail tiles.
 - **productivity** (`ProductivityDashboard.tsx`): weather + calendar + to-do + sticky notes in a column grid.
 - **desktop** (`DesktopDashboard.tsx`): OS-style floating windows. Windows are defined in `panels.tsx` (host metrics, storage, network, mail, calendar, code, calculator, AI chat, external links); layout (position, size, visibility, z-order, snap state) managed by `useDesktopLayout.ts` and persisted to `localStorage`. A launcher dock toggles window visibility.

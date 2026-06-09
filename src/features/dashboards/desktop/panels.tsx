@@ -10,13 +10,11 @@ import {
   Code2,
   Calculator,
   ExternalLink,
-  BotMessageSquare
 } from "lucide-react";
 import { useConnectionStatus } from "@/app/shell/useConnectionStatus";
 import { useSystemStatus } from "./useSystemStatus";
 import { StatRow, formatMem, formatUptime } from "./desktopUi";
 import { CalculatorApp } from "./CalculatorApp";
-import { AiChatCard } from "@/features/dashboards/planner/AiChatCard";
 
 function HostBody() {
   const { data } = useSystemStatus();
@@ -101,30 +99,15 @@ function UtilitiesBody() {
           target="_blank"
           rel="noreferrer"
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "11px 13px",
-            borderRadius: 13,
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "11px 13px", borderRadius: 13,
             background: "rgba(255,255,255,0.06)",
             border: "1px solid rgba(255,255,255,0.1)",
-            color: "var(--ink)",
-            textDecoration: "none",
-            fontSize: 13,
-            fontWeight: 500
+            color: "var(--ink)", textDecoration: "none",
+            fontSize: 13, fontWeight: 500
           }}
         >
-          <span
-            style={{
-              display: "grid",
-              placeItems: "center",
-              width: 30,
-              height: 30,
-              borderRadius: 9,
-              background: "rgba(255,255,255,0.1)",
-              flex: "none"
-            }}
-          >
+          <span style={{ display: "grid", placeItems: "center", width: 30, height: 30, borderRadius: 9, background: "rgba(255,255,255,0.1)", flex: "none" }}>
             {util.icon}
           </span>
           <span style={{ flex: 1, minWidth: 0 }}>{util.label}</span>
@@ -142,19 +125,10 @@ export type PanelDef = {
   Body: ComponentType;
 };
 
-function AgentBody() {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, margin: "-14px -16px -16px" }}>
-      <AiChatCard />
-    </div>
-  );
-}
-
 export const PANELS: PanelDef[] = [
-  { id: "host", title: "Host", icon: <Cpu size={14} />, Body: HostBody },
-  { id: "server", title: "Server", icon: <Server size={14} />, Body: ServerBody },
-  { id: "storage", title: "Storage", icon: <HardDrive size={14} />, Body: StorageBody },
-  { id: "utilities", title: "Utilities", icon: <AppWindow size={14} />, Body: UtilitiesBody },
+  { id: "host",       title: "Host",       icon: <Cpu size={14} />,        Body: HostBody },
+  { id: "server",     title: "Server",     icon: <Server size={14} />,     Body: ServerBody },
+  { id: "storage",    title: "Storage",    icon: <HardDrive size={14} />,  Body: StorageBody },
+  { id: "utilities",  title: "Utilities",  icon: <AppWindow size={14} />,  Body: UtilitiesBody },
   { id: "calculator", title: "Calculator", icon: <Calculator size={14} />, Body: CalculatorApp },
-  { id: "agent", title: "Aura Agent", icon: <BotMessageSquare size={14} />, Body: AgentBody }
 ];

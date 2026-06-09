@@ -71,6 +71,27 @@
   font-weight: 600;
   margin-top: 1px;
 }
+.planner .wx-hero-alerts {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.planner .wx-alert-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .planner .wx-hero-right {
   display: flex;
   align-items: center;
@@ -158,12 +179,25 @@
 }
 .planner .wx-forecast {
   min-height: 0;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 .planner .wx-forecast .wx-card-title {
   flex: none;
+}
+.planner .wx-forecast-rows {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.planner .wx-forecast-alerts {
+  flex: none;
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .planner .wx-map {
   min-height: 0;

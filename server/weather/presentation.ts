@@ -1,4 +1,4 @@
-import type { EnsembleWeather, WeatherPoint, WeatherWidgetPayload } from "./types.js";
+import type { EnsembleWeather, WeatherPoint, WeatherWarning, WeatherWidgetPayload } from "./types.js";
 
 function formatHourLabel(time: string) {
   return new Intl.DateTimeFormat("en-GB", { hour: "numeric" }).format(new Date(time));
@@ -66,7 +66,7 @@ function formatWindDirection(deg?: number) {
   return directions[Math.round(deg / 45) % directions.length];
 }
 
-export function buildWeatherWidgetPayload(weather: EnsembleWeather): WeatherWidgetPayload {
+export function buildWeatherWidgetPayload(weather: EnsembleWeather, warnings: WeatherWarning[] = []): WeatherWidgetPayload {
   const currentConditionCode = conditionCodeFromWeatherCode(weather.current.weatherCode);
   const today = weather.daily[0];
   const precipitationSummary = summaryFromPrecipitation(weather.hourly.slice(0, 4));
@@ -121,6 +121,7 @@ export function buildWeatherWidgetPayload(weather: EnsembleWeather): WeatherWidg
     meta: {
       updatedAt: weather.updatedAt,
       sourcesUsed: weather.sourcesUsed
-    }
+    },
+    warnings
   };
 }

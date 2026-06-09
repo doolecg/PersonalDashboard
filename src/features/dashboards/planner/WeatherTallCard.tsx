@@ -4,11 +4,11 @@ import { useWeatherData } from "@/features/cards/weather/useWeatherData";
 import type { WeatherWidgetPayload } from "@/features/cards/weather/types";
 import {
   findRainWindow,
-  kmhToMph,
   precipitationBand,
   precipitationBandHeight,
   type PrecipPoint,
 } from "@/features/cards/weather/weatherPresentation";
+import { deriveAlerts } from "@/features/cards/weather/weatherAlerts";
 import { WeatherGlyph } from "@/features/cards/weather/weatherGlyph";
 import { Card } from "./ui";
 
@@ -125,27 +125,9 @@ function PrecipBandGraph({ points }: { points: PrecipPoint[] }) {
   );
 }
 
-// We have no official alerts feed, so derive sensible advisories from the
-// forecast (wind, heavy rain, thunder, snow) over the next 24 hours.
-function deriveWarnings(data: WeatherWidgetPayload): string[] {
-  const warnings: string[] = [];
-  const windMph = kmhToMph(data.details.windKmh);
-  if (windMph >= 55) warnings.push(`Gale-force winds (~${windMph} mph)`);
-  else if (windMph >= 40) warnings.push(`Strong winds (~${windMph} mph)`);
-
-  const next = data.precipitation.points.slice(0, 24);
-  if (next.some((point) => point.precipitationMm >= 7.6)) warnings.push("Heavy rain expected");
-
-  const code = `${data.current.conditionCode} ${data.current.conditionLabel}`.toLowerCase();
-  if (code.includes("thunder") || code.includes("storm")) warnings.push("Thunderstorms possible");
-  if (code.includes("snow") || code.includes("sleet") || code.includes("ice")) warnings.push("Snow, sleet or ice");
-
-  return warnings;
-}
-
 function WeatherWarnings({ data }: { data: WeatherWidgetPayload }) {
-  const warnings = deriveWarnings(data);
-  if (warnings.length === 0) {
+  const alerts = deriveAlerts(data);
+  if (alerts.length === 0) {
     return (
       <div className="weather-warnings ok">
         <ShieldCheck aria-hidden className="h-3.5 w-3.5" />
@@ -155,10 +137,10 @@ function WeatherWarnings({ data }: { data: WeatherWidgetPayload }) {
   }
   return (
     <div className="weather-warnings alert">
-      {warnings.map((warning) => (
-        <div className="ww-item" key={warning}>
+      {alerts.map((alert) => (
+        <div className={`ww-item ww-${alert.severity}`} key={alert.message}>
           <AlertTriangle aria-hidden className="h-3.5 w-3.5 shrink-0" />
-          <span>{warning}</span>
+          <span>{alert.message}</span>
         </div>
       ))}
     </div>

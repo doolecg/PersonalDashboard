@@ -52,6 +52,12 @@ export type EnsembleWeather = {
   daily: WeatherDailyPoint[];
 };
 
+export type WeatherWarning = {
+  message: string;
+  severity: "yellow" | "amber" | "red";
+  type: string;
+};
+
 export type WeatherWidgetPayload = {
   current: {
     location: string;
@@ -109,4 +115,5 @@ export type WeatherWidgetPayload = {
     updatedAt: string;
     sourcesUsed: WeatherSourceId[];
   };
+  warnings: WeatherWarning[];
 };

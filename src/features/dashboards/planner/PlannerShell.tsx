@@ -1,10 +1,11 @@
-import { CloudSun, Settings2 } from "lucide-react";
+import { AlertTriangle, CloudSun, Settings2 } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { usePreferences } from "@/app/preferences/usePreferences";
 import { useShellClock } from "@/app/shell/useShellClock";
 import { useConnectionStatus } from "@/app/shell/useConnectionStatus";
 import { useTickerTrack } from "@/app/shell/useTickerTrack";
 import { useWeatherData } from "@/features/cards/weather/useWeatherData";
+import { deriveAlerts } from "@/features/cards/weather/weatherAlerts";
 import bgImage from "@/assets/bg.png";
 import { dashboardIds, dashboardLabels, type DashboardId } from "@/features/dashboards/dashboards";
 import type { TickerItem } from "@/app/shell/types";
@@ -38,6 +39,23 @@ function WeatherPill() {
   );
 }
 
+function GlobalAlertBanner() {
+  const { data } = useWeatherData();
+  if (!data) return null;
+  const alerts = deriveAlerts(data);
+  if (!alerts.length) return null;
+  return (
+    <div className="weather-alert-bar">
+      {alerts.map((alert) => (
+        <div key={alert.message} className={`weather-alert weather-alert-${alert.severity}`}>
+          <AlertTriangle size={12} aria-hidden />
+          {alert.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 type PlannerShellProps = {
   onOpenSettings: () => void;
   userName: string;
@@ -46,6 +64,7 @@ type PlannerShellProps = {
   activeDashboard: DashboardId;
   onSelectDashboard: (dashboard: DashboardId) => void;
   children: ReactNode;
+  extraHeaderAction?: ReactNode;
 };
 
 export function PlannerShell({
@@ -55,7 +74,8 @@ export function PlannerShell({
   tickerItems,
   activeDashboard,
   onSelectDashboard,
-  children
+  children,
+  extraHeaderAction
 }: PlannerShellProps) {
   const preferences = usePreferences();
   const { timeText, dateText } = useShellClock(!preferences.clock24h);
@@ -98,6 +118,7 @@ export function PlannerShell({
               <div className="t">{timeText}</div>
               <div className="d">{dateText}</div>
             </div>
+            {extraHeaderAction}
             <button type="button" className="icon-btn glass" aria-label="Open settings" onClick={onOpenSettings}>
               <Settings2 size={18} />
             </button>
@@ -105,9 +126,11 @@ export function PlannerShell({
           </div>
         </header>
 
+        <GlobalAlertBanner />
+
         {children}
 
-        {/* Floating AI chat — always visible as a corner FAB on every dashboard */}
+        {/* Floating AI chat */}
         <AiChatCard variant="floating" />
 
         {preferences.showTicker && tickerItems.length ? (
