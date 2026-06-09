@@ -60,6 +60,13 @@
   overflow: hidden;
   background: #070a18;
 }
+/* On mobile the outer container scrolls; fix the background to the viewport
+   so it covers the full screen as content scrolls beneath it. */
+@media (max-width: 720px) {
+  .planner .planner-bg {
+    position: fixed;
+  }
+}
 .planner .planner-bg-img {
   position: absolute;
   inset: -5%;
@@ -308,7 +315,8 @@
   gap: 20px;
   min-height: 0;
 }
-.planner .col > .glass {
+.planner .col > .glass,
+.planner .news-quad > .glass {
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -863,7 +871,7 @@
   z-index: 200;
   display: grid;
   place-items: center;
-  background: rgba(6, 8, 24, 0.55);
+  background: rgba(4, 6, 20, 0.65);
   padding: 20px;
 }
 .planner .evm {
@@ -872,6 +880,9 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(160deg, rgba(20, 23, 50, 0.98) 0%, rgba(10, 12, 30, 0.99) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 24px 60px rgba(4, 6, 20, 0.88), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 .planner .evm-head {
   display: flex;
@@ -1360,6 +1371,192 @@
   overflow: hidden;
 }
 
+/* ---------- global weather alert banner ---------- */
+.planner .weather-alert-bar {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: -4px;
+}
+.planner .weather-alert {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+/* Met Office severity colour system */
+.planner .weather-alert-yellow { background: rgba(245,216,0,0.15);  border-color: rgba(245,216,0,0.45);  color: #fff5a0; }
+.planner .weather-alert-amber  { background: rgba(245,132,0,0.18);  border-color: rgba(245,132,0,0.48);  color: #ffd090; }
+.planner .weather-alert-red    { background: rgba(217,0,0,0.18);    border-color: rgba(217,0,0,0.48);    color: #ffb0b0; }
+
+/* weather-warnings sub-item colour variants */
+.planner .ww-item.ww-yellow { color: #fff5a0; }
+.planner .ww-item.ww-amber  { color: #ffd090; }
+.planner .ww-item.ww-red    { color: #ffb0b0; }
+
+/* ---------- news quad grid ---------- */
+.planner .news-quad-col {
+  display: flex;
+  flex-direction: column;
+}
+.planner .news-quad {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+}
+.planner .news-quad > .glass {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ---------- server log entries ---------- */
+.planner .log-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 5px 6px;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.35;
+  background: rgba(255,255,255,0.04);
+}
+.planner .log-entry.log-warn  { background: rgba(255,159,10,0.1);  }
+.planner .log-entry.log-error { background: rgba(255,69,58,0.12);  }
+.planner .log-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  margin-top: 1px;
+  color: var(--ink-faint);
+}
+.planner .log-entry.log-warn  .log-icon { color: #ff9f0a; }
+.planner .log-entry.log-error .log-icon { color: #ff453a; }
+.planner .log-msg {
+  flex: 1;
+  min-width: 0;
+  color: rgba(255,255,255,0.82);
+  word-break: break-word;
+}
+.planner .log-time {
+  flex: none;
+  color: var(--ink-faint);
+  font-size: 10.5px;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+/* ---------- desktop launcher (Start menu) ---------- */
+.planner .desk-start-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.planner .desk-start-btn:hover,
+.planner .desk-start-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+.planner .desk-launcher {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+  padding: 14px;
+  border-radius: 20px;
+  min-width: 260px;
+}
+.planner .desk-launcher-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.planner .desk-launcher-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px 10px;
+  border-radius: 14px;
+  border: none;
+  background: rgba(255,255,255,0.06);
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  text-align: center;
+}
+.planner .desk-launcher-item:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.planner .desk-launcher-item.active { background: var(--accent); color: #fff; }
+.planner .desk-launcher-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.1);
+  flex: none;
+}
+.planner .desk-launcher-item.active .desk-launcher-icon { background: rgba(255,255,255,0.2); }
+.planner .desk-launcher-label { line-height: 1.1; }
+.planner .desk-launcher-sep {
+  height: 1px;
+  background: rgba(255,255,255,0.12);
+  margin: 4px 0 10px;
+}
+.planner .desk-launcher-reset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.planner .desk-launcher-reset:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+/* The dock now only contains the Start button — shrink it to fit */
+.planner .desk-dock {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 16px;
+}
+
 /* ---------- linux-style desktop ---------- */
 .planner .desk-area {
   position: relative;
@@ -1616,34 +1813,50 @@
   gap: 8px;
   margin-top: 4px;
 }
-.planner .tldr-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-}
-.planner .tldr-tag {
-  flex: none;
-  min-width: 52px;
-  text-align: center;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: #fff;
-  background: var(--accent);
-  padding: 3px 8px;
-  border-radius: 8px;
-  margin-top: 1px;
-}
-.planner .tldr-text {
-  font-size: 13px;
-  line-height: 1.42;
-  color: rgba(255, 255, 255, 0.88);
-}
+/* old tldr styles kept for reference — now replaced by nlm-* */
 .planner .tldr-topic {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* ---------- NotebookLM topic chips ---------- */
+.planner .nlm-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.planner .nlm-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+.planner .nlm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.planner .nlm-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  cursor: pointer;
+}
+.planner .nlm-chip:hover {
+  background: rgba(100, 180, 255, 0.18);
+  border-color: rgba(100, 180, 255, 0.4);
+  color: #fff;
 }
 .planner .tldr-headlines {
   display: flex;
@@ -1877,6 +2090,12 @@
     padding-bottom: 88px;
   }
 
+  /* News quad collapses to a single column on mobile */
+  .planner .news-quad {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
   /* Desktop dashboard: replace floating windows with a stacked scroll list */
   .planner .desk-area {
     overflow-y: auto;
@@ -1972,10 +2191,20 @@
 
 }
 
-/* Desktop launcher FAB/menu hidden on non-mobile */
+/* Desktop launcher FAB/menu — visible only on mobile.
+   These are rendered outside desk-area (in PlannerShell) so fixed
+   positioning works correctly even when the page scrolls. */
 .planner .desk-mob-fab,
 .planner .desk-mob-menu {
   display: none;
+}
+@media (max-width: 720px) {
+  .planner .desk-mob-fab {
+    display: grid;
+  }
+  .planner .desk-mob-menu {
+    display: flex;
+  }
 }
 
 /* ---------- Floating AI live-chat (all viewports) ---------- */

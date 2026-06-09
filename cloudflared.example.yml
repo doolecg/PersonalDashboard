@@ -3,5 +3,5 @@ credentials-file: /home/pi/.cloudflared/aura.json
 
 ingress:
   - hostname: aura.example.com
-    service: http://localhost:8080
+    service: http://localhost:8090
   - service: http_status:404

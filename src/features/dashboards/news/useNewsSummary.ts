@@ -65,6 +65,8 @@ function getOrCreateStore(endpoint: string) {
   return stores.get(endpoint)!;
 }
 
+export { getOrCreateStore as getOrRefreshStore };
+
 export function useNewsSummary(endpoint: string): Snapshot {
   const store = getOrCreateStore(endpoint);
   return useSyncExternalStore(

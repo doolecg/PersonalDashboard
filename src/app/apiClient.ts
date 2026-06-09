@@ -111,7 +111,7 @@ export async function getNewsSummary(): Promise<NewsSummary> {
 }
 
 export type TldrHeadline = { title: string; url?: string; image?: string; source: string; description?: string };
-export type TldrTopic = { label: string; tldr: string; source: "ai" | "headlines"; headlines: TldrHeadline[] };
+export type TldrTopic = { label: string; suggestions: string[]; headlines: TldrHeadline[] };
 export type TldrSummary = { topics: TldrTopic[] };
 
 export async function getTldr(force = false): Promise<TldrSummary> {
