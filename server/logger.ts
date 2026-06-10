@@ -1,7 +1,7 @@
 type LogLevel = "info" | "warn" | "error";
 type LogMeta = Record<string, unknown>;
 
-export type LogEntry = { time: string; level: LogLevel; message: string };
+export type LogEntry = { time: string; level: LogLevel; message: string; source?: string; count?: number };
 
 const LOG_BUFFER_MAX = 120;
 const logBuffer: LogEntry[] = [];
@@ -42,18 +42,41 @@ export function formatError(error: unknown) {
   return { message: serialize(error) };
 }
 
-function write(level: LogLevel, message: string, meta?: LogMeta) {
+function write(level: LogLevel, message: string, meta?: LogMeta, source?: string) {
   const time = new Date().toISOString();
   const clean = scrub(message);
-  const entry: LogEntry = { time, level, message: clean };
+  const entry: LogEntry = { time, level, message: clean, ...(source ? { source } : {}) };
   logBuffer.push(entry);
   if (logBuffer.length > LOG_BUFFER_MAX) logBuffer.shift();
 
-  const line = { time, level, message: clean, ...(meta ? { meta } : {}) };
+  const line = { time, level, message: clean, ...(source ? { source } : {}), ...(meta ? { meta } : {}) };
   const output = serialize(line);
   if (level === "error") console.error(output);
   else if (level === "warn") console.warn(output);
   else console.log(output);
+}
+
+// Deduped logging: a given key logs at most once per window; repeats are counted
+// on the buffered entry and summarized when the window reopens. Keeps missing
+// API keys / unreachable providers from spamming the console and log buffer.
+const DEDUPE_WINDOW_MS = 10 * 60 * 1000;
+type DedupeState = { until: number; suppressed: number; entry: LogEntry };
+const dedupeMap = new Map<string, DedupeState>();
+
+function writeDeduped(key: string, level: LogLevel, message: string, meta?: LogMeta, source?: string) {
+  const now = Date.now();
+  const state = dedupeMap.get(key);
+  if (state && state.until > now) {
+    state.suppressed += 1;
+    state.entry.count = state.suppressed + 1;
+    return;
+  }
+  if (state && state.suppressed > 0) {
+    write("info", `${message} (repeated ${state.suppressed} times, suppressed)`, undefined, source);
+  }
+  write(level, message, meta, source);
+  const entry = logBuffer[logBuffer.length - 1];
+  dedupeMap.set(key, { until: now + DEDUPE_WINDOW_MS, suppressed: 0, entry });
 }
 
 export const logger = {
@@ -65,5 +88,22 @@ export const logger = {
   },
   error(message: string, error?: unknown, meta?: LogMeta) {
     write("error", message, { ...(meta ?? {}), error: formatError(error) });
+  },
+  source(source: string) {
+    return {
+      info: (message: string, meta?: LogMeta) => write("info", message, meta, source),
+      warn: (message: string, meta?: LogMeta) => write("warn", message, meta, source),
+      error: (message: string, error?: unknown, meta?: LogMeta) =>
+        write("error", message, { ...(meta ?? {}), error: formatError(error) }, source)
+    };
+  },
+  dedupedInfo(key: string, message: string, meta?: LogMeta) {
+    writeDeduped(key, "info", message, meta, key.split(":")[0]);
+  },
+  dedupedWarn(key: string, message: string, meta?: LogMeta) {
+    writeDeduped(key, "warn", message, meta, key.split(":")[0]);
+  },
+  dedupedError(key: string, message: string, error?: unknown, meta?: LogMeta) {
+    writeDeduped(key, "error", message, { ...(meta ?? {}), error: formatError(error) }, key.split(":")[0]);
   }
 };

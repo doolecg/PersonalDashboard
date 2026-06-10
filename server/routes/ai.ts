@@ -1,4 +1,5 @@
 import { Router, type Response } from "express";
+import { getAuth } from "../auth/middleware.js";
 import { runAssistant, type AssistantMessage } from "../ai/assistant.js";
 import { generateLifeSummary, type LifeSummaryEvent } from "../ai/lifeSummary.js";
 import { getNewsSummary } from "../ai/newsSummary.js";
@@ -57,7 +58,7 @@ aiRouter.post("/stream", async (req, res) => {
     for await (const token of routeAiStream(withRedactedContext(request))) writeSse(res, "token", { token });
     writeSse(res, "done", getAiStatus());
   } catch (error) {
-    logger.error("AI stream route failed", error, { route: "/api/ai/stream" });
+    logger.dedupedWarn("ai:stream", `AI stream unavailable: ${error instanceof Error ? error.message : String(error)}`);
     writeSse(res, "error", { message: error instanceof Error ? error.message : "AI unavailable" });
   } finally {
     res.end();
@@ -72,7 +73,7 @@ aiRouter.get("/news-summary", async (req, res) => {
   try {
     res.json(await getNewsSummary(req.query.force === "true"));
   } catch (error) {
-    logger.error("AI news summary failed", error, { route: "/api/ai/news-summary" });
+    logger.dedupedWarn("ai:news-summary", `News summary unavailable: ${error instanceof Error ? error.message : String(error)}`);
     res.status(503).json({ message: error instanceof Error ? error.message : "News summary unavailable" });
   }
 });
@@ -81,7 +82,7 @@ aiRouter.get("/tech-summary", async (req, res) => {
   try {
     res.json(await getTechSummary(req.query.force === "true"));
   } catch (error) {
-    logger.error("AI tech summary failed", error, { route: "/api/ai/tech-summary" });
+    logger.dedupedWarn("ai:tech-summary", `Tech summary unavailable: ${error instanceof Error ? error.message : String(error)}`);
     res.status(503).json({ message: error instanceof Error ? error.message : "Tech summary unavailable" });
   }
 });
@@ -90,7 +91,7 @@ aiRouter.get("/science-summary", async (req, res) => {
   try {
     res.json(await getScienceSummary(req.query.force === "true"));
   } catch (error) {
-    logger.error("AI science summary failed", error, { route: "/api/ai/science-summary" });
+    logger.dedupedWarn("ai:science-summary", `Science summary unavailable: ${error instanceof Error ? error.message : String(error)}`);
     res.status(503).json({ message: error instanceof Error ? error.message : "Science summary unavailable" });
   }
 });
@@ -99,7 +100,7 @@ aiRouter.get("/tldr", async (req, res) => {
   try {
     res.json(await getTldrSummaries(req.query.force === "true"));
   } catch (error) {
-    logger.error("AI TLDR summary failed", error, { route: "/api/ai/tldr" });
+    logger.dedupedWarn("ai:tldr", `TLDR unavailable: ${error instanceof Error ? error.message : String(error)}`);
     res.status(503).json({ message: error instanceof Error ? error.message : "TLDR unavailable" });
   }
 });
@@ -128,7 +129,7 @@ aiRouter.post("/life-summary", async (req, res) => {
       )
     );
   } catch (error) {
-    logger.error("AI life summary failed", error, { route: "/api/ai/life-summary" });
+    logger.dedupedWarn("ai:life-summary", `Life summary unavailable: ${error instanceof Error ? error.message : String(error)}`);
     res.status(503).json({ message: error instanceof Error ? error.message : "Life summary unavailable" });
   }
 });
@@ -170,9 +171,9 @@ aiRouter.post("/assistant", async (req, res) => {
   const contextText = context ? redactContextForPrompt(context, env.aiMaxContextChars) : undefined;
 
   try {
-    res.json(await runAssistant(messages, contextText));
+    res.json(await runAssistant(messages, contextText, getAuth(req).userId));
   } catch (error) {
-    logger.error("AI assistant route failed", error, { route: "/api/ai/assistant" });
+    logger.dedupedWarn("ai:assistant", `Assistant unavailable: ${error instanceof Error ? error.message : String(error)}`);
     res.status(503).json({ message: error instanceof Error ? error.message : "Assistant unavailable" });
   }
 });
@@ -182,7 +183,7 @@ aiRouter.post("/chat", async (req, res) => {
   try {
     res.json(await completeWithFallback(request));
   } catch (error) {
-    logger.error("AI chat route failed", error, { route: "/api/ai/chat" });
+    logger.dedupedWarn("ai:chat", `AI chat unavailable: ${error instanceof Error ? error.message : String(error)}`);
     res.status(503).json({ message: error instanceof Error ? error.message : "AI unavailable" });
   }
 });

@@ -6,6 +6,7 @@ import { ollamaProvider } from "../adapters/ollamaProvider.js";
 import { env } from "../env.js";
 import { logger } from "../logger.js";
 import { readObject, writeObject } from "../store/collectionStore.js";
+import { getLocalProvider } from "../serverConfig.js";
 const modes = ["auto", "openrouter", "gemini", "openai", "local"];
 let currentMode = modes.includes(env.aiRoutingMode) ? env.aiRoutingMode : "auto";
 // A specific model the user pinned in Settings (provider inferred from the mode).
@@ -83,12 +84,12 @@ function attempt(providerName, model, provider) {
     return { provider, providerName, model };
 }
 function localAttempts() {
-    // OpenAI-compatible first — it's the user-configurable local server URL
-    // (LM Studio / llama.cpp), then Ollama on its native endpoint.
-    return [
-        attempt("openai-compatible", env.openAiCompatModel, llamaCppOpenAiProvider),
-        attempt("ollama", env.ollamaModel, ollamaProvider)
-    ];
+    // Use only the local provider the user picked in Settings (LM Studio's
+    // OpenAI-compatible server, or Ollama's native endpoint) — don't fan out to
+    // the other and rack up failures for a backend that isn't running.
+    return getLocalProvider() === "ollama"
+        ? [attempt("ollama", env.ollamaModel, ollamaProvider)]
+        : [attempt("openai-compatible", env.openAiCompatModel, llamaCppOpenAiProvider)];
 }
 function baseAttemptsForMode(mode) {
     if (mode === "local")
@@ -117,6 +118,13 @@ function attemptsForMode(mode) {
 }
 function canSkipProvider(error) {
     return /authentication failed|api_key is not configured/i.test(error.message);
+}
+// A model that returns a rate-limit/quota error is put on a cooldown so the next
+// request starts from a fresh free model instead of re-hitting the limited one.
+const rateLimitedUntil = new Map();
+const RATE_LIMIT_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+function isRateLimited(error) {
+    return /rate.?limit|quota|429|too many requests|temporarily/i.test(error.message);
 }
 function fallbackAttempts() {
     return [];
@@ -161,7 +169,12 @@ export function isAiRoutingMode(value) {
 export async function routeAiComplete(request) {
     const attempts = [];
     const blockedProviders = new Set();
-    const candidates = [...attemptsForMode(currentMode), ...fallbackAttempts()];
+    const allCandidates = [...attemptsForMode(currentMode), ...fallbackAttempts()];
+    // Prefer models that aren't on a rate-limit cooldown; if every candidate is
+    // cooling down, fall back to trying them all anyway so we never hard-stop.
+    const now = Date.now();
+    const fresh = allCandidates.filter((candidate) => (rateLimitedUntil.get(candidate.model) ?? 0) <= now);
+    const candidates = fresh.length ? fresh : allCandidates;
     for (const candidate of candidates) {
         if (blockedProviders.has(candidate.providerName))
             continue;
@@ -177,14 +190,26 @@ export async function routeAiComplete(request) {
         catch (error) {
             const message = error instanceof Error ? error.message : "AI provider unavailable";
             attempts.push({ provider: candidate.providerName, model: candidate.model, status: "failed", message, at });
-            logger.warn("AI provider attempt failed", { provider: candidate.providerName, model: candidate.model, message });
+            // Deduped per provider: a missing key or down provider logs once per
+            // window instead of on every request.
+            logger.dedupedWarn(`ai:${candidate.providerName}`, `AI provider unavailable: ${candidate.providerName} (${message})`, { model: candidate.model });
             if (error instanceof Error && canSkipProvider(error))
                 blockedProviders.add(candidate.providerName);
+            // Rate-limited free model → cool it down so we cycle to the next one.
+            if (error instanceof Error && isRateLimited(error)) {
+                rateLimitedUntil.set(candidate.model, Date.now() + RATE_LIMIT_COOLDOWN_MS);
+            }
         }
     }
     const message = attempts.at(-1)?.message ?? "AI unavailable";
     recordFailure(message, attempts);
-    logger.error("AI routing failed", message, { attempts });
+    if (attempts.length === 0) {
+        // No provider configured at all — that's a setup state, not an error.
+        logger.dedupedInfo("ai:unconfigured", "No AI provider configured; deterministic fallbacks remain active");
+    }
+    else {
+        logger.dedupedError("ai:routing", `AI routing failed: ${message}`);
+    }
     throw new Error(message);
 }
 export async function* routeAiStream(request) {

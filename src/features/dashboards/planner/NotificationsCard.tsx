@@ -1,3 +1,4 @@
+import { apiFetch } from "@/app/http";
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, AlertTriangle, Bell, Info, RefreshCw } from "lucide-react";
 import { Card } from "./ui";
@@ -5,7 +6,7 @@ import { Card } from "./ui";
 type LogEntry = { time: string; level: "info" | "warn" | "error"; message: string };
 
 async function fetchLogs(): Promise<LogEntry[]> {
-  const res = await fetch("/api/log/recent");
+  const res = await apiFetch("/api/log/recent");
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = (await res.json()) as { logs: LogEntry[] };
   return data.logs;

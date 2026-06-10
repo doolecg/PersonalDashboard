@@ -5,14 +5,20 @@ import { buildAuthUrl, clearTokens, exchangeCode, isConnected, isGoogleConfigure
 
 export const googleRouter = Router();
 
-googleRouter.get("/auth", (_req, res) => {
+// OAuth redirect flow lives on a separate, unauthenticated router: Google's
+// consent redirect is a plain browser navigation and cannot carry our Bearer
+// token. It never returns dashboard data — it only completes the token
+// exchange for the server's single Google connection.
+export const googleOAuthRouter = Router();
+
+googleOAuthRouter.get("/auth", (_req, res) => {
   if (!isGoogleConfigured()) {
     return res.status(400).send("Google is not configured. Add your client ID and secret in Settings first.");
   }
   res.redirect(buildAuthUrl("aura"));
 });
 
-googleRouter.get("/callback", async (req, res) => {
+googleOAuthRouter.get("/callback", async (req, res) => {
   const code = typeof req.query.code === "string" ? req.query.code : "";
   if (!code) return res.status(400).send("Missing authorization code.");
   try {

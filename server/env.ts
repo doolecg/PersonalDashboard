@@ -9,6 +9,12 @@ const numberFromEnv = (key: string, fallback: number) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const boolFromEnv = (key: string, fallback: boolean) => {
+  const value = process.env[key];
+  if (!value) return fallback;
+  return !/^(false|0|no|off)$/i.test(value.trim());
+};
+
 export const env = {
   port: numberFromEnv("PORT", 8090),
   nodeEnv: process.env.NODE_ENV ?? "development",
@@ -62,5 +68,22 @@ export const env = {
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
   googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? "http://localhost:8090/api/google/callback",
-  googleCalendarId: process.env.GOOGLE_CALENDAR_ID ?? "primary"
+  googleCalendarId: process.env.GOOGLE_CALENDAR_ID ?? "primary",
+  // --- Supabase / auth / storage ---
+  supabaseUrl: process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? "",
+  supabaseAnonKey: process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY ?? "",
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+  supabaseKvTable: process.env.SUPABASE_KV_TABLE ?? "aura_kv",
+  // Auth is on by default; AUTH_ENABLED=false is honoured only outside production
+  // so a public deployment can never silently run unauthenticated.
+  authEnabled: boolFromEnv("AUTH_ENABLED", true),
+  authProvider: process.env.AUTH_PROVIDER ?? "supabase",
+  authAllowedEmails: (process.env.AUTH_ALLOWED_EMAILS ?? "")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean),
+  authRequireEmailVerification: boolFromEnv("AUTH_REQUIRE_EMAIL_VERIFICATION", true),
+  // "supabase" (production default) or "json" (development/migration fallback).
+  storageDriver: process.env.AURA_STORAGE_DRIVER ?? "supabase",
+  googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY ?? ""
 };

@@ -1,5 +1,5 @@
-import { createOpenAiProvider } from "../adapters/openAiProvider.js";
 import { messagesFromPrompt } from "../providers/aiProvider.js";
+import { routeAiComplete } from "../providers/aiRuntime.js";
 function formatClock(time) {
     if (!time)
         return undefined;
@@ -48,8 +48,9 @@ function buildPrompt(payload) {
     const next = payload.hourly.slice(0, 8).map((hour) => `${hour.label}: ${Math.round(hour.temperatureC ?? 0)}°, ${Math.round(hour.probability ?? 0)}% rain`).join("; ");
     const days = payload.daily.slice(0, 4).map((day) => `${day.label}: ${Math.round(day.highC ?? 0)}°/${Math.round(day.lowC ?? 0)}°, ${Math.round(day.probability ?? 0)}% rain`).join("; ");
     return [
-        `Write a short, warm weather report for ${payload.current.location} in 1-2 sentences (max 40 words).`,
-        "Be practical and friendly, like a phone weather app. Do not use markdown, lists, or emoji.",
+        `Write a warm, flowing weather report paragraph for ${payload.current.location}, 3 to 4 sentences.`,
+        "Cover the conditions now, how the next few hours and the coming days look, and give practical advice on what to wear and whether to bring an umbrella.",
+        "Be friendly, like a phone weather app. Plain text only: no markdown, no lists, no emoji, no quotation marks.",
         `Now: ${payload.current.conditionLabel}, ${Math.round(payload.current.temperatureC)}°.`,
         rainStart && startClock ? `Rain likely from about ${startClock}.` : "No notable rain in the next few hours.",
         `Next hours — ${next}.`,
@@ -57,13 +58,14 @@ function buildPrompt(payload) {
     ].join("\n");
 }
 export async function generateWeatherReport(payload) {
-    const provider = createOpenAiProvider();
-    const message = await provider.complete({
+    // Route through the provider chain so the report works with whatever AI is
+    // configured (OpenRouter, OpenAI, Gemini, or a local model) — not OpenAI only.
+    const result = await routeAiComplete({
         messages: messagesFromPrompt(buildPrompt(payload)),
-        maxTokens: 160,
+        maxTokens: 320,
     });
-    const text = message.trim();
+    const text = result.message.trim();
     if (!text)
-        throw new Error("OpenAI returned an empty weather report.");
+        throw new Error("AI returned an empty weather report.");
     return text;
 }

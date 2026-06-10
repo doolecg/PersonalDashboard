@@ -47,10 +47,8 @@ const HEAVY_RAIN_MM_PER_HOUR = 5;
 function rainRateToIntensity(precipitationMm) {
     return Math.max(0, Math.min(100, Math.round((precipitationMm / HEAVY_RAIN_MM_PER_HOUR) * 100)));
 }
-// Emit one bar per hour for the next 24 hours. The card windows this down to
-// 4h (1x1), 12h (2x1) or 24h (2x2) depending on footprint.
 function buildPrecipitationPoints(hourly) {
-    return hourly.slice(0, 24).map((point) => ({
+    return hourly.slice(0, 72).map((point) => ({
         time: point.time,
         label: formatHourLabel(point.time),
         precipitationMm: Number((point.precipitationMm ?? 0).toFixed(4)),
@@ -64,7 +62,7 @@ function formatWindDirection(deg) {
     const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
     return directions[Math.round(deg / 45) % directions.length];
 }
-export function buildWeatherWidgetPayload(weather) {
+export function buildWeatherWidgetPayload(weather, warnings = []) {
     const currentConditionCode = conditionCodeFromWeatherCode(weather.current.weatherCode);
     const today = weather.daily[0];
     const precipitationSummary = summaryFromPrecipitation(weather.hourly.slice(0, 4));
@@ -85,7 +83,7 @@ export function buildWeatherWidgetPayload(weather) {
             summary: precipitationSummary,
             points: buildPrecipitationPoints(weather.hourly)
         },
-        hourly: weather.hourly.slice(0, 24).map((point) => ({
+        hourly: weather.hourly.slice(0, 72).map((point) => ({
             time: point.time,
             label: formatHourLabel(point.time),
             temperatureC: point.temperatureC,
@@ -96,7 +94,7 @@ export function buildWeatherWidgetPayload(weather) {
             cloudCoverPercent: point.cloudCoverPercent,
             conditionCode: conditionCodeFromWeatherCode(point.weatherCode)
         })),
-        daily: weather.daily.slice(0, 10).map((point) => ({
+        daily: weather.daily.slice(0, 14).map((point) => ({
             date: point.date,
             label: formatDayLabel(point.date),
             highC: point.highC,
@@ -118,6 +116,7 @@ export function buildWeatherWidgetPayload(weather) {
         meta: {
             updatedAt: weather.updatedAt,
             sourcesUsed: weather.sourcesUsed
-        }
+        },
+        warnings
     };
 }

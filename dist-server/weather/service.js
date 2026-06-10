@@ -1,5 +1,6 @@
 import { env } from "../env.js";
 import { mergeWeatherSources } from "./ensemble.js";
+import { fetchMetOfficeWarnings } from "./metOfficeWarnings.js";
 import { normalizeMetNo, normalizeOpenMeteo } from "./normalize.js";
 import { buildWeatherWidgetPayload } from "./presentation.js";
 import { fetchMetNoForecast } from "./sourceMetNo.js";
@@ -25,10 +26,11 @@ export async function getWeatherWidgetPayload(location) {
         return cached.payload;
     }
     try {
-        const [ukmo, metno, icon] = await Promise.allSettled([
+        const [ukmo, metno, icon, warnings] = await Promise.allSettled([
             fetchOpenMeteoUkmo(latitude, longitude),
             fetchMetNoForecast(latitude, longitude),
-            fetchOpenMeteoIcon(latitude, longitude)
+            fetchOpenMeteoIcon(latitude, longitude),
+            fetchMetOfficeWarnings()
         ]);
         const normalized = [
             ukmo.status === "fulfilled" ? normalizeOpenMeteo(ukmo.value, "open-meteo-ukmo", city) : null,
@@ -38,7 +40,8 @@ export async function getWeatherWidgetPayload(location) {
         if (!normalized.length) {
             throw new Error("All weather providers failed");
         }
-        const payload = buildWeatherWidgetPayload(mergeWeatherSources(normalized));
+        const metOfficeWarnings = warnings.status === "fulfilled" ? warnings.value : [];
+        const payload = buildWeatherWidgetPayload(mergeWeatherSources(normalized), metOfficeWarnings);
         cache.set(key, { expiresAt: Date.now() + (5 * 60 * 1000), payload });
         return payload;
     }

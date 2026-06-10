@@ -1,14 +1,22 @@
 # Aura
 
-A calm, Apple/visionOS-inspired personal dashboard. Built with Vite + React 19 + TypeScript on the frontend and Express on the backend, served from a single origin — designed for a Raspberry Pi or PC behind a Cloudflare Tunnel.
+A retro sci-fi personal dashboard — a secure, logged-in command system with a dim-CRT, phosphor-green visual language. Built with Vite + React 19 + TypeScript on the frontend and Express on the backend, served from a single origin — designed for a Raspberry Pi or PC behind a Cloudflare Tunnel.
+
+> **Auth is required.** Aura uses Supabase for authentication and synced,
+> user-scoped storage; the production build must not run without it. See
+> [docs/AUTH_AND_SYNC.md](docs/AUTH_AND_SYNC.md) for setup, migration, and
+> Cloudflare Tunnel guidance.
 
 ## Features
 
+- **Required auth + cross-device sync**: Supabase Auth (AURA ACCESS login screen, allowed-email list, email verification) with all todos/notes/reminders/events/assistant state scoped to your user and consistent across devices
 - **4 dashboards**: News, Weather, Productivity, Desktop
+- **Desktop "machine room"**: working terminal (safe dashboard commands only), logs/diagnostics viewer with dedupe, auth/storage/sync/AI status panel, and the AURA Core proactive assistant
+- **AURA Core**: deterministic proactive suggestions (daily brief, calendar gaps, back-to-back warnings, prep todos) — works without any AI provider; creating todos/reminders always requires your approval, and dismissals sync across devices
 - **Weather**: Live ensemble forecast (Open-Meteo + Met.no), hourly rain graph, 10-day forecast, wind/UV/sun tiles, precipitation map
 - **News**: TLDR newsletters (Tech/AI/Web Dev/DevOps), global headlines, science/space, tech news
-- **Productivity**: Calendar (local + Google), to-dos, notes, reminders — all server-persisted
-- **AI chat**: Multi-provider failover (OpenRouter → Gemini → OpenAI → local); tool-calling assistant that can create events, todos, and notes
+- **Productivity**: Calendar (local + Google), to-dos, notes, reminders — all server-persisted and user-scoped
+- **AI chat**: Multi-provider failover (OpenRouter → Gemini → OpenAI → local); tool-calling assistant that can create events, todos, and notes; missing providers degrade calmly (no error spam)
 - **Preferences**: Location, display name, profile image, 24h clock, background/ticker toggle
 - **Settings UI**: Runtime API key management, local-AI config, Google Calendar OAuth
 
@@ -46,6 +54,12 @@ Copy `.env.example` to `.env` and fill in what you need:
 
 | Variable | Purpose |
 |---|---|
+| `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | Supabase auth in the browser (public, baked at build time) |
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | Server-side Supabase storage + token verification (**server-only**) |
+| `AURA_STORAGE_DRIVER` | `supabase` (production) or `json` (dev fallback) |
+| `AUTH_ENABLED` | `true` by default; `false` honoured only outside production |
+| `AUTH_ALLOWED_EMAILS` | Comma-separated allow-list of sign-in emails |
+| `AUTH_REQUIRE_EMAIL_VERIFICATION` | Block unverified accounts (default `true`) |
 | `OPENROUTER_API_KEY` | OpenRouter (free models available) |
 | `OPENAI_API_KEY` | OpenAI — required for tool-calling assistant |
 | `GEMINI_API_KEY` | Google Gemini |
@@ -77,11 +91,18 @@ Produces `aura-<version>-linux.tar.gz` containing everything needed to deploy (n
 
 ## Data storage
 
-There is no database. All data is stored as JSON files under `./data/`:
+User data (todos, notes, reminders, events, assistant state) lives in Supabase
+(`aura_kv` table, user-scoped, RLS-protected) so it syncs across devices.
+Migration from existing local files: `npm run migrate:supabase -- --email you@example.com`.
 
-- `notes.json`, `todos.json`, `reminders.json` — collections edited in the UI
+Server-level config stays as JSON under `./data/`:
+
 - `secrets.json` — API key overrides (never returned in full via API)
+- `server-config.json` — local-AI settings
 - `google-tokens.json` — Google OAuth tokens
+
+In development (`AURA_STORAGE_DRIVER=json`, `AUTH_ENABLED=false`) collections
+fall back to local JSON files under `./data/` as before.
 
 ## Project structure
 

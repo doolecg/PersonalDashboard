@@ -1,0 +1,186 @@
+/* Shared styles for the Desktop "machine room": logs viewer, system status,
+   and AURA Core suggestion cards. Quiet diagnostic surfaces — mono labels,
+   muted colours, no glow spam. */
+
+/* ---------- logs ---------- */
+.sysl {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 180px;
+  gap: 8px;
+}
+
+.sysl-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.sysl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(157, 255, 154, 0.16);
+  background: rgba(157, 255, 154, 0.04);
+  color: var(--aura-text-muted, #7f8776);
+  font-family: var(--aura-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.sysl-chip.active {
+  color: var(--aura-green, #9dff9a);
+  border-color: rgba(157, 255, 154, 0.4);
+  background: rgba(157, 255, 154, 0.1);
+}
+
+.sysl-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-family: var(--aura-mono);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.sysl-row {
+  display: flex;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: rgba(157, 255, 154, 0.03);
+}
+
+.sysl-row.sysl-warn { background: rgba(255, 184, 107, 0.07); }
+.sysl-row.sysl-error { background: rgba(255, 107, 97, 0.08); }
+
+.sysl-time {
+  flex: none;
+  color: var(--aura-text-disabled, #4f574d);
+}
+
+.sysl-level {
+  flex: none;
+  width: 44px;
+  color: var(--aura-text-muted, #7f8776);
+}
+
+.sysl-warn .sysl-level { color: var(--aura-amber, #ffb86b); }
+.sysl-error .sysl-level { color: var(--aura-red, #ff6b61); }
+
+.sysl-msg {
+  flex: 1;
+  min-width: 0;
+  color: rgba(231, 226, 210, 0.8);
+  word-break: break-word;
+}
+
+.sysl-count {
+  color: var(--aura-text-muted, #7f8776);
+  font-style: italic;
+}
+
+/* ---------- system status ---------- */
+.syss {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.syss-gap {
+  margin-top: 10px;
+}
+
+.syss-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.syss-label {
+  color: var(--ink-dim, rgba(231, 226, 210, 0.68));
+}
+
+.syss-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 550;
+  color: var(--ink, #e9e5d8);
+}
+
+.syss-note {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--aura-text-muted, #7f8776);
+  line-height: 1.45;
+}
+
+.syss-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ---------- AURA Core suggestions ---------- */
+.acore {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.acore-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.acore-card {
+  padding: 11px 13px;
+  border-radius: 12px;
+  border: 1px solid rgba(157, 255, 154, 0.14);
+  background: rgba(157, 255, 154, 0.04);
+}
+
+.acore-card.acore-medium { border-color: rgba(255, 184, 107, 0.22); }
+.acore-card.acore-high { border-color: rgba(255, 107, 97, 0.3); }
+
+.acore-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink, #e9e5d8);
+}
+
+.acore-msg {
+  margin: 5px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-dim, rgba(231, 226, 210, 0.68));
+}
+
+.acore-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.acore .aura-btn,
+.syss .aura-btn {
+  padding: 5px 11px;
+  font-size: 12px;
+  border-radius: 8px;
+}

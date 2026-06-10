@@ -1,3 +1,4 @@
+import { apiFetch } from "@/app/http";
 import { useSyncExternalStore } from "react";
 import type { NewsTickerItem } from "@/types/models";
 
@@ -28,7 +29,7 @@ function createNewsSummaryStore(endpoint: string) {
 
     try {
       const url = force ? `${endpoint}?force=true` : endpoint;
-      const response = await fetch(url);
+      const response = await apiFetch(url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       data = (await response.json()) as NewsSummary;
     } catch (error) {

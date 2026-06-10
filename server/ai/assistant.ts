@@ -144,12 +144,12 @@ function parseArgs(raw: string): Record<string, unknown> {
 // is active; if none is tool-capable (or the loop fails — e.g. a free model that
 // rejects the tools param), fall back to a plain routed completion so chat still
 // works, just without the ability to act on the dashboard.
-export async function runAssistant(history: AssistantMessage[], contextText?: string): Promise<AssistantResult> {
+export async function runAssistant(history: AssistantMessage[], contextText?: string, userId = "local"): Promise<AssistantResult> {
   const endpoint = resolveToolEndpoint();
 
   if (endpoint) {
     try {
-      return await runWithToolLoop(endpoint, history, contextText);
+      return await runWithToolLoop(endpoint, history, contextText, userId);
     } catch (error) {
       logger.warn("Assistant tool loop failed; falling back to routed completion", {
         provider: endpoint.provider,
@@ -166,7 +166,7 @@ export async function runAssistant(history: AssistantMessage[], contextText?: st
   return { reply: result.message.trim() || "I'm not sure how to answer that.", toolCalls: [] };
 }
 
-async function runWithToolLoop(endpoint: ToolEndpoint, history: AssistantMessage[], contextText?: string): Promise<AssistantResult> {
+async function runWithToolLoop(endpoint: ToolEndpoint, history: AssistantMessage[], contextText: string | undefined, userId: string): Promise<AssistantResult> {
   const messages: OpenAiMessage[] = [
     { role: "system", content: contextText ? `${systemPrompt}\n\nDashboard context: ${contextText}` : systemPrompt },
     ...history.map((message) => ({ role: message.role, content: message.content }))
@@ -189,7 +189,7 @@ async function runWithToolLoop(endpoint: ToolEndpoint, history: AssistantMessage
 
       let result: unknown;
       try {
-        result = tool ? await tool.execute(args) : { error: `Unknown tool: ${call.function.name}` };
+        result = tool ? await tool.execute(args, { userId }) : { error: `Unknown tool: ${call.function.name}` };
       } catch (error) {
         logger.warn("Assistant tool failed", { tool: call.function.name, message: error instanceof Error ? error.message : String(error) });
         result = { error: error instanceof Error ? error.message : "Tool execution failed." };

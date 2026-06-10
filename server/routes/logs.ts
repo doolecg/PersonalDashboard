@@ -1,9 +1,12 @@
 import { Router } from "express";
 import { logger, getRecentLogs } from "../logger.js";
+import { requireAuth } from "../auth/middleware.js";
 
 export const logsRouter = Router();
 
-logsRouter.get("/recent", (_req, res) => {
+// The router is mounted publicly (client-error reporting must work from the
+// login screen), so the log *viewer* enforces auth itself.
+logsRouter.get("/recent", requireAuth, (_req, res) => {
   res.json({ logs: getRecentLogs() });
 });
 

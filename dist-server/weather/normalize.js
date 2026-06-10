@@ -85,7 +85,7 @@ function aggregateDaily(hourly) {
 }
 export function normalizeMetNo(raw, city, latitude, longitude) {
     const timeseries = raw.properties?.timeseries ?? [];
-    const hourly = timeseries.slice(0, 24).map((entry) => {
+    const hourly = timeseries.slice(0, 72).map((entry) => {
         const details = entry.data?.instant?.details ?? {};
         const nextHour = entry.data?.next_1_hours;
         return {

@@ -1,7 +1,8 @@
+import { calendarTool, notesTool, remindersTool, todosTool } from "./dashboardTools.js";
 import { weatherTool } from "./weatherTool.js";
 // All tools the assistant can call. Add new dashboard capabilities here and
 // they become available to the model with no other wiring required.
-export const assistantTools = [weatherTool];
+export const assistantTools = [weatherTool, todosTool, remindersTool, notesTool, calendarTool];
 const toolsByName = new Map(assistantTools.map((tool) => [tool.name, tool]));
 export function getAssistantTool(name) {
     return toolsByName.get(name);

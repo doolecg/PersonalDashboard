@@ -10,11 +10,19 @@ import {
   Code2,
   Calculator,
   ExternalLink,
+  ScrollText,
+  ShieldCheck,
+  Sparkles,
+  TerminalSquare,
 } from "lucide-react";
 import { useConnectionStatus } from "@/app/shell/useConnectionStatus";
 import { useSystemStatus } from "./useSystemStatus";
 import { StatRow, formatMem, formatUptime } from "./desktopUi";
 import { CalculatorApp } from "./CalculatorApp";
+import { TerminalPanel } from "@/features/terminal/TerminalPanel";
+import { LogsPanel } from "@/features/system/LogsPanel";
+import { SystemStatusPanel } from "@/features/system/SystemStatusPanel";
+import { AssistantSuggestionsPanel } from "@/features/assistant/AssistantSuggestionsPanel";
 
 function HostBody() {
   const { data } = useSystemStatus();
@@ -126,9 +134,13 @@ export type PanelDef = {
 };
 
 export const PANELS: PanelDef[] = [
-  { id: "host",       title: "Host",       icon: <Cpu size={14} />,        Body: HostBody },
-  { id: "server",     title: "Server",     icon: <Server size={14} />,     Body: ServerBody },
-  { id: "storage",    title: "Storage",    icon: <HardDrive size={14} />,  Body: StorageBody },
-  { id: "utilities",  title: "Utilities",  icon: <AppWindow size={14} />,  Body: UtilitiesBody },
-  { id: "calculator", title: "Calculator", icon: <Calculator size={14} />, Body: CalculatorApp },
+  { id: "host",       title: "Host",        icon: <Cpu size={14} />,            Body: HostBody },
+  { id: "server",     title: "Server",      icon: <Server size={14} />,         Body: ServerBody },
+  { id: "storage",    title: "Storage",     icon: <HardDrive size={14} />,      Body: StorageBody },
+  { id: "utilities",  title: "Utilities",   icon: <AppWindow size={14} />,      Body: UtilitiesBody },
+  { id: "calculator", title: "Calculator",  icon: <Calculator size={14} />,     Body: CalculatorApp },
+  { id: "terminal",   title: "Terminal",    icon: <TerminalSquare size={14} />, Body: TerminalPanel },
+  { id: "logs",       title: "Logs",        icon: <ScrollText size={14} />,     Body: LogsPanel },
+  { id: "system",     title: "System",      icon: <ShieldCheck size={14} />,    Body: SystemStatusPanel },
+  { id: "core",       title: "AURA Core",   icon: <Sparkles size={14} />,       Body: AssistantSuggestionsPanel },
 ];
