@@ -1,11 +1,17 @@
 import { randomUUID } from "node:crypto";
-import { readCollection, writeCollection } from "../../store/collectionStore.js";
-import type { AssistantTool } from "./types.js";
+import { getStorageDriver, withSyncTracking } from "../../storage/driver.js";
+import type { AssistantTool, ToolContext } from "./types.js";
 
 // Write-capable tools that let the assistant manage the user's dashboard data.
-// Notes, to-dos, and calendar events are all persisted as JSON collections under
-// env.dataDir (see collectionStore), so these tools read/modify/save the same
-// files the cards render from. The cards pick up changes on their next load.
+// Notes, to-dos, and calendar events go through the user-scoped storage driver
+// (Supabase in production, JSON in dev), so these tools read/modify/save the
+// same collections the cards render from. The cards pick up changes on their
+// next load.
+
+const readItems = <T>(ctx: ToolContext, name: string) =>
+  withSyncTracking(() => getStorageDriver().list<T>(ctx.userId, name));
+const writeItems = <T>(ctx: ToolContext, name: string, items: T[]) =>
+  withSyncTracking(() => getStorageDriver().replaceCollection(ctx.userId, name, items));
 
 type Todo = { id: string; text: string; done: boolean; createdAt: string };
 type Note = { id: string; text: string; updatedAt: string; title?: string; color?: string };
@@ -47,15 +53,15 @@ export const todosTool: AssistantTool = {
     required: ["action"],
     additionalProperties: false
   },
-  execute: async (args) => {
+  execute: async (args, ctx) => {
     const action = str(args.action) || "list";
-    const items = await readCollection<Todo>("todos");
+    const items = await readItems<Todo>(ctx, "todos");
 
     if (action === "add") {
       const text = str(args.text);
       if (!text) return { error: "No to-do text provided." };
       const todo: Todo = { id: randomUUID(), text, done: false, createdAt: new Date().toISOString() };
-      await writeCollection("todos", [...items, todo]);
+      await writeItems(ctx, "todos", [...items, todo]);
       return { ok: true, added: todo.text };
     }
 
@@ -66,7 +72,7 @@ export const todosTool: AssistantTool = {
         action === "complete"
           ? items.map((todo) => (todo.id === target.id ? { ...todo, done: true } : todo))
           : items.filter((todo) => todo.id !== target.id);
-      await writeCollection("todos", next);
+      await writeItems(ctx, "todos", next);
       return action === "complete" ? { ok: true, completed: target.text } : { ok: true, removed: target.text };
     }
 
@@ -88,23 +94,23 @@ export const notesTool: AssistantTool = {
     required: ["action"],
     additionalProperties: false
   },
-  execute: async (args) => {
+  execute: async (args, ctx) => {
     const action = str(args.action) || "list";
-    const items = await readCollection<Note>("notes");
+    const items = await readItems<Note>(ctx, "notes");
 
     if (action === "add") {
       const text = str(args.text);
       const title = str(args.title);
       if (!text && !title) return { error: "No note text provided." };
       const note: Note = { id: randomUUID(), text, title: title || undefined, updatedAt: new Date().toISOString() };
-      await writeCollection("notes", [...items, note]);
+      await writeItems(ctx, "notes", [...items, note]);
       return { ok: true, added: note.title || note.text };
     }
 
     if (action === "remove") {
       const target = findMatch(items, args, ["title", "text"]);
       if (!target) return { error: "Couldn't find a matching note." };
-      await writeCollection("notes", items.filter((note) => note.id !== target.id));
+      await writeItems(ctx, "notes", items.filter((note) => note.id !== target.id));
       return { ok: true, removed: target.title || target.text };
     }
 
@@ -128,9 +134,9 @@ export const remindersTool: AssistantTool = {
     required: ["action"],
     additionalProperties: false
   },
-  execute: async (args) => {
+  execute: async (args, ctx) => {
     const action = str(args.action) || "list";
-    const items = await readCollection<Reminder>("reminders");
+    const items = await readItems<Reminder>(ctx, "reminders");
 
     if (action === "add") {
       const text = str(args.text);
@@ -138,7 +144,7 @@ export const remindersTool: AssistantTool = {
       const dueRaw = str(args.due);
       const due = dueRaw && !Number.isNaN(new Date(dueRaw).getTime()) ? new Date(dueRaw).toISOString() : undefined;
       const reminder: Reminder = { id: randomUUID(), text, due, done: false };
-      await writeCollection("reminders", [...items, reminder]);
+      await writeItems(ctx, "reminders", [...items, reminder]);
       return { ok: true, added: reminder.text, due: reminder.due };
     }
 
@@ -149,7 +155,7 @@ export const remindersTool: AssistantTool = {
         action === "complete"
           ? items.map((r) => (r.id === target.id ? { ...r, done: true } : r))
           : items.filter((r) => r.id !== target.id);
-      await writeCollection("reminders", next);
+      await writeItems(ctx, "reminders", next);
       return action === "complete" ? { ok: true, completed: target.text } : { ok: true, removed: target.text };
     }
 
@@ -175,9 +181,9 @@ export const calendarTool: AssistantTool = {
     required: ["action"],
     additionalProperties: false
   },
-  execute: async (args) => {
+  execute: async (args, ctx) => {
     const action = str(args.action) || "list";
-    const items = await readCollection<CalendarEvent>("events");
+    const items = await readItems<CalendarEvent>(ctx, "events");
 
     if (action === "add") {
       const title = str(args.title);
@@ -194,14 +200,14 @@ export const calendarTool: AssistantTool = {
         location: str(args.location) || undefined,
         description: str(args.description) || undefined
       };
-      await writeCollection("events", [...items, event]);
+      await writeItems(ctx, "events", [...items, event]);
       return { ok: true, added: { title: event.title, start: event.start } };
     }
 
     if (action === "remove") {
       const target = findMatch(items, args, ["title"]);
       if (!target) return { error: "Couldn't find a matching event." };
-      await writeCollection("events", items.filter((event) => event.id !== target.id));
+      await writeItems(ctx, "events", items.filter((event) => event.id !== target.id));
       return { ok: true, removed: target.title };
     }
 

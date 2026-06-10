@@ -7,12 +7,15 @@
 @import url("https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap");
 
 .planner {
-  --accent: #0a84ff;
-  --radius: 26px;
-  --ink: #ffffff;
-  --ink-dim: rgba(255, 255, 255, 0.66);
-  --ink-faint: rgba(255, 255, 255, 0.42);
-  --glass-border: rgba(255, 255, 255, 0.2);
+  /* Retro sci-fi skin: phosphor green accent on warm off-white ink. The whole
+     shell re-themes through these four tokens plus the surfaces below. */
+  --accent: #6ee787;
+  --accent-ink: #07140b; /* text on top of accent fills */
+  --radius: 18px;
+  --ink: #e9e5d8;
+  --ink-dim: rgba(231, 226, 210, 0.68);
+  --ink-faint: rgba(231, 226, 210, 0.44);
+  --glass-border: rgba(157, 255, 154, 0.17);
 
   position: relative;
   width: 100%;
@@ -58,7 +61,22 @@
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background: #070a18;
+  /* Dim CRT depth — no photo needed; a user image still layers on top. */
+  background:
+    radial-gradient(ellipse 130% 90% at 50% -15%, rgba(110, 231, 135, 0.07), transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 115%, rgba(115, 220, 235, 0.05), transparent 60%),
+    linear-gradient(180deg, #07100d, #050706 58%, #030404);
+}
+/* Faint static scanlines + vignette over the backdrop, under the content.
+   Static gradients only — cheap to composite on a Raspberry Pi. */
+.planner .planner-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(157, 255, 154, 0.05) 0 1px, transparent 1px 4px);
+  opacity: 0.6;
+  box-shadow: inset 0 0 220px rgba(0, 0, 0, 0.55);
 }
 /* On mobile the outer container scrolls; fix the background to the viewport
    so it covers the full screen as content scrolls beneath it. */
@@ -78,7 +96,7 @@
 .planner .planner-bg-tint {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(8, 10, 30, 0.5) 0%, rgba(8, 10, 30, 0.62) 100%);
+  background: linear-gradient(180deg, rgba(7, 14, 10, 0.55) 0%, rgba(5, 9, 7, 0.68) 100%);
 }
 
 /* ---------- scene (legacy, unused) ---------- */
@@ -137,12 +155,13 @@
 /* ---------- glass primitive ---------- */
 .planner .glass {
   position: relative;
-  background: linear-gradient(157deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 42%, rgba(255, 255, 255, 0.02) 100%),
-    linear-gradient(157deg, rgba(74, 80, 124, 0.5) 0%, rgba(34, 38, 70, 0.6) 100%);
+  /* Dark terminal panel: aged glass over a green-black chassis. */
+  background: linear-gradient(165deg, rgba(157, 255, 154, 0.05) 0%, rgba(157, 255, 154, 0.012) 38%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(165deg, rgba(18, 28, 21, 0.86) 0%, rgba(8, 13, 10, 0.92) 100%);
   border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 20px 54px rgba(6, 8, 28, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    inset 0 -16px 40px rgba(255, 255, 255, 0.03), inset 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 20px 54px rgba(2, 5, 3, 0.45), inset 0 1px 0 rgba(157, 255, 154, 0.1),
+    inset 0 -16px 40px rgba(0, 0, 0, 0.18);
   color: var(--ink);
   overflow: hidden;
 }
@@ -152,8 +171,8 @@
   left: 0;
   right: 0;
   top: 0;
-  height: 42%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
+  height: 36%;
+  background: linear-gradient(180deg, rgba(157, 255, 154, 0.07), rgba(157, 255, 154, 0));
   pointer-events: none;
   opacity: 0.5;
 }
@@ -257,8 +276,8 @@
   font-weight: 700;
   font-size: 18px;
   color: #fff;
-  background: linear-gradient(140deg, #ff9f5a, #ff5e8a);
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5), 0 6px 18px rgba(255, 94, 138, 0.35);
+  background: linear-gradient(140deg, #2f5238, #16301f);
+  box-shadow: inset 0 1px 2px rgba(157, 255, 154, 0.25), 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 .planner .h-ava img {
   width: 100%;
@@ -288,7 +307,7 @@
 }
 .planner .tab.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
 }
 .planner .icon-btn {
   display: grid;
@@ -355,7 +374,7 @@
 .planner .pill-count {
   font-size: 12px;
   font-weight: 600;
-  color: #fff;
+  color: var(--accent-ink);
   background: var(--accent);
   padding: 3px 9px;
   border-radius: 20px;
@@ -487,7 +506,7 @@
 .planner .precip-bar-fill {
   width: 100%;
   border-radius: 7px;
-  background: linear-gradient(180deg, var(--accent), #64d2ff);
+  background: linear-gradient(180deg, var(--accent), #73dceb);
   min-height: 3px;
 }
 .planner .precip-bar-lbl {
@@ -556,9 +575,9 @@
   height: 30px;
   border-radius: 50%;
   flex: none;
-  background: conic-gradient(from 200deg, #5e5ce6, #0a84ff, #64d2ff, #5e5ce6);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(94, 92, 230, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  background: conic-gradient(from 200deg, #1f4d2e, #6ee787, #73dceb, #1f4d2e);
+  color: var(--accent-ink);
+  box-shadow: 0 4px 14px rgba(110, 231, 135, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.35);
 }
 .planner .ai-orb.sm {
   width: 22px;
@@ -600,7 +619,7 @@
 .planner .chat-msg.user {
   align-self: flex-end;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
   border-bottom-right-radius: 5px;
 }
 .planner .chat-msg.assistant {
@@ -673,7 +692,7 @@
   border: none;
   flex: none;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
   cursor: pointer;
 }
 .planner .ai-send:disabled {
@@ -797,7 +816,7 @@
   background: var(--accent);
 }
 .planner .cal-day.today .cal-day-num {
-  color: #fff;
+  color: var(--accent-ink);
   font-weight: 700;
 }
 .planner .cal-day.dim .cal-day-num {
@@ -880,9 +899,9 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(160deg, rgba(20, 23, 50, 0.98) 0%, rgba(10, 12, 30, 0.99) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 24px 60px rgba(4, 6, 20, 0.88), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  background: linear-gradient(160deg, rgba(18, 28, 21, 0.98) 0%, rgba(7, 12, 9, 0.99) 100%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 24px 60px rgba(2, 5, 3, 0.88), inset 0 1px 0 rgba(157, 255, 154, 0.1);
 }
 .planner .evm-head {
   display: flex;
@@ -1047,7 +1066,7 @@
 .planner .evm-save {
   border: none;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
   border-radius: 11px;
   font: inherit;
   font-size: 13px;
@@ -1473,7 +1492,7 @@
 .planner .desk-start-btn:hover,
 .planner .desk-start-btn.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
 }
 .planner .desk-launcher {
   position: absolute;
@@ -1509,7 +1528,7 @@
   text-align: center;
 }
 .planner .desk-launcher-item:hover { background: rgba(255,255,255,0.12); color: #fff; }
-.planner .desk-launcher-item.active { background: var(--accent); color: #fff; }
+.planner .desk-launcher-item.active { background: var(--accent); color: var(--accent-ink); }
 .planner .desk-launcher-icon {
   display: grid;
   place-items: center;
@@ -1571,7 +1590,7 @@
   min-height: 0;
   border-radius: 18px;
   /* Override the default glass white highlight — windows look crisper without it */
-  background: linear-gradient(157deg, rgba(74, 80, 124, 0.55) 0%, rgba(28, 32, 60, 0.72) 100%);
+  background: linear-gradient(157deg, rgba(20, 32, 24, 0.88) 0%, rgba(8, 13, 10, 0.94) 100%);
 }
 .planner .desk-win::before {
   display: none;
@@ -1669,7 +1688,7 @@
 }
 .planner .desk-dock-item.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
 }
 .planner .desk-dock-sep {
   width: 1px;
@@ -1694,11 +1713,11 @@
   background: rgba(255, 255, 255, 0.14);
 }
 .planner .calc-key-op {
-  background: rgba(10, 132, 255, 0.3);
-  border-color: rgba(10, 132, 255, 0.5);
+  background: rgba(110, 231, 135, 0.22);
+  border-color: rgba(110, 231, 135, 0.4);
 }
 .planner .calc-key-op:hover {
-  background: rgba(10, 132, 255, 0.5);
+  background: rgba(110, 231, 135, 0.38);
 }
 .planner .calc-key-fn {
   background: rgba(255, 255, 255, 0.04);
@@ -1721,11 +1740,12 @@
   display: flex;
   align-items: center;
   gap: 7px;
+  font-family: var(--aura-mono);
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--accent-ink);
   background: var(--accent);
   padding: 4px 9px;
   border-radius: 16px;
@@ -1766,7 +1786,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--accent-ink);
   animation: planner-pulse 2s infinite;
 }
 @keyframes planner-pulse {
@@ -1854,8 +1874,8 @@
   cursor: pointer;
 }
 .planner .nlm-chip:hover {
-  background: rgba(100, 180, 255, 0.18);
-  border-color: rgba(100, 180, 255, 0.4);
+  background: rgba(110, 231, 135, 0.16);
+  border-color: rgba(110, 231, 135, 0.38);
   color: #fff;
 }
 .planner .tldr-headlines {
@@ -1944,7 +1964,7 @@
   position: absolute;
   inset: 0;
   transform: translateX(-160%) skewX(-12deg);
-  background: linear-gradient(90deg, rgba(94, 92, 230, 0) 0%, rgba(100, 210, 255, 0.32) 48%, rgba(94, 92, 230, 0) 100%);
+  background: linear-gradient(90deg, rgba(110, 231, 135, 0) 0%, rgba(115, 220, 235, 0.28) 48%, rgba(110, 231, 135, 0) 100%);
   animation: skeleton-shine 1.85s ease-in-out infinite;
   animation-delay: var(--shine-delay, 0ms);
 }
@@ -2138,7 +2158,7 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: #fff;
     cursor: pointer;
-    background: rgba(22, 26, 58, 0.96);
+    background: rgba(16, 26, 19, 0.96);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
     z-index: 120;
     transition: transform 0.15s, box-shadow 0.15s;
@@ -2181,7 +2201,7 @@
   }
   .planner .desk-mob-item.active {
     background: var(--accent);
-    color: #fff;
+    color: var(--accent-ink);
   }
   .planner .desk-mob-sep {
     height: 1px;
@@ -2221,8 +2241,8 @@
   border: none;
   color: #fff;
   cursor: pointer;
-  background: conic-gradient(from 200deg, #5e5ce6, #0a84ff, #64d2ff, #5e5ce6);
-  box-shadow: 0 10px 28px rgba(10, 12, 40, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  background: conic-gradient(from 200deg, #1f4d2e, #6ee787, #73dceb, #1f4d2e);
+  box-shadow: 0 10px 28px rgba(3, 8, 4, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.35);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .planner .ai-fab:hover {
@@ -2246,9 +2266,9 @@
   pointer-events: none;
   transition: transform 0.24s ease, opacity 0.18s ease;
   border-radius: 22px;
-  background: linear-gradient(160deg, rgba(20, 23, 50, 0.97) 0%, rgba(12, 14, 36, 0.99) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  box-shadow: 0 24px 60px rgba(4, 6, 20, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+  background: linear-gradient(160deg, rgba(18, 28, 21, 0.97) 0%, rgba(7, 12, 9, 0.99) 100%) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 5, 3, 0.85), inset 0 1px 0 rgba(157, 255, 154, 0.1) !important;
 }
 .planner .ai-panel.open {
   transform: none;

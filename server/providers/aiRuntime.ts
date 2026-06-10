@@ -221,7 +221,13 @@ export async function routeAiComplete(request: AiRequest): Promise<RouteResult> 
     } catch (error) {
       const message = error instanceof Error ? error.message : "AI provider unavailable";
       attempts.push({ provider: candidate.providerName, model: candidate.model, status: "failed", message, at });
-      logger.warn("AI provider attempt failed", { provider: candidate.providerName, model: candidate.model, message });
+      // Deduped per provider: a missing key or down provider logs once per
+      // window instead of on every request.
+      logger.dedupedWarn(
+        `ai:${candidate.providerName}`,
+        `AI provider unavailable: ${candidate.providerName} (${message})`,
+        { model: candidate.model }
+      );
       if (error instanceof Error && canSkipProvider(error)) blockedProviders.add(candidate.providerName);
       // Rate-limited free model → cool it down so we cycle to the next one.
       if (error instanceof Error && isRateLimited(error)) {
@@ -232,7 +238,12 @@ export async function routeAiComplete(request: AiRequest): Promise<RouteResult> 
 
   const message = attempts.at(-1)?.message ?? "AI unavailable";
   recordFailure(message, attempts);
-  logger.error("AI routing failed", message, { attempts });
+  if (attempts.length === 0) {
+    // No provider configured at all — that's a setup state, not an error.
+    logger.dedupedInfo("ai:unconfigured", "No AI provider configured; deterministic fallbacks remain active");
+  } else {
+    logger.dedupedError("ai:routing", `AI routing failed: ${message}`);
+  }
   throw new Error(message);
 }
 

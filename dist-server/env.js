@@ -7,8 +7,14 @@ const numberFromEnv = (key, fallback) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
 };
+const boolFromEnv = (key, fallback) => {
+    const value = process.env[key];
+    if (!value)
+        return fallback;
+    return !/^(false|0|no|off)$/i.test(value.trim());
+};
 export const env = {
-    port: numberFromEnv("PORT", 8080),
+    port: numberFromEnv("PORT", 8090),
     nodeEnv: process.env.NODE_ENV ?? "development",
     dataDir: process.env.DATA_DIR ?? "./data",
     defaultCity: process.env.DEFAULT_CITY ?? "Local",
@@ -17,14 +23,22 @@ export const env = {
     weatherProvider: process.env.WEATHER_PROVIDER ?? "ensemble",
     headerUserName: process.env.HEADER_USER_NAME ?? "",
     footerTickerItems: process.env.FOOTER_TICKER_ITEMS ?? "",
-    newsRssFeeds: process.env.NEWS_RSS_FEEDS ?? "",
-    aiRoutingMode: process.env.AI_ROUTING_MODE ?? "auto",
+    newsRssFeeds: process.env.NEWS_RSS_FEEDS ?? "BBC Merseyside|https://feeds.bbci.co.uk/news/england/merseyside/rss.xml,Wirral Globe|https://www.wirralglobe.co.uk/rss/",
+    globalNewsRssFeeds: process.env.GLOBAL_NEWS_RSS_FEEDS ?? "BBC World|https://feeds.bbci.co.uk/news/world/rss.xml,The Guardian|https://www.theguardian.com/world/rss,Sky News|https://feeds.skynews.com/feeds/rss/home.xml,Al Jazeera|https://www.aljazeera.com/xml/rss/all.xml",
+    techNewsRssFeeds: process.env.TECH_NEWS_RSS_FEEDS ?? "Hacker News|https://news.ycombinator.com/rss,Ars Technica|https://feeds.arstechnica.com/arstechnica/index,VentureBeat AI|https://venturebeat.com/category/ai/feed/,Tom's Hardware|https://www.tomshardware.com/feeds/all,The Verge|https://www.theverge.com/rss/tech/index.xml",
+    scienceNewsRssFeeds: process.env.SCIENCE_NEWS_RSS_FEEDS ?? "NASA|https://www.nasa.gov/rss/dyn/breaking_news.rss,Space.com|https://www.space.com/feeds/all,SpaceflightNow|https://spaceflightnow.com/feed/,Science Daily|https://www.sciencedaily.com/rss/space_time.xml,ESA|https://www.esa.int/rssfeed/Our_Activities/Space_Science",
+    aiTopicRssFeeds: process.env.AI_NEWS_RSS_FEEDS ?? "TLDR AI|https://tldr.tech/api/rss/ai",
+    devTopicRssFeeds: process.env.DEV_NEWS_RSS_FEEDS ?? "TLDR Dev|https://tldr.tech/api/rss/webdev",
+    designTopicRssFeeds: process.env.DESIGN_NEWS_RSS_FEEDS ?? "TLDR Tech|https://tldr.tech/api/rss/tech",
+    itTopicRssFeeds: process.env.IT_NEWS_RSS_FEEDS ?? "TLDR DevOps|https://tldr.tech/api/rss/devops",
+    aiRoutingMode: process.env.AI_ROUTING_MODE ?? "openrouter",
     aiTimeoutMs: numberFromEnv("AI_TIMEOUT_MS", 30000),
     aiMaxContextChars: numberFromEnv("AI_MAX_CONTEXT_CHARS", 4000),
     aiPrivacyMode: process.env.AI_PRIVACY_MODE ?? "high",
     openRouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
     openRouterBaseUrl: process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
     openRouterModel: process.env.OPENROUTER_MODEL ?? "google/gemma-4-31b-it:free",
+    assistantModel: process.env.ASSISTANT_MODEL ?? "openai/gpt-4o-mini",
     openRouterFreeModels: (process.env.OPENROUTER_FREE_MODELS ?? [
         "google/gemma-4-31b-it:free",
         "google/gemma-4-26b-a4b-it:free",
@@ -51,6 +65,23 @@ export const env = {
     openAiCompatModel: process.env.OPENAI_COMPAT_MODEL ?? "local-model",
     googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-    googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? "http://localhost:8080/api/google/callback",
-    googleCalendarId: process.env.GOOGLE_CALENDAR_ID ?? "primary"
+    googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? "http://localhost:8090/api/google/callback",
+    googleCalendarId: process.env.GOOGLE_CALENDAR_ID ?? "primary",
+    // --- Supabase / auth / storage ---
+    supabaseUrl: process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? "",
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY ?? "",
+    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+    supabaseKvTable: process.env.SUPABASE_KV_TABLE ?? "aura_kv",
+    // Auth is on by default; AUTH_ENABLED=false is honoured only outside production
+    // so a public deployment can never silently run unauthenticated.
+    authEnabled: boolFromEnv("AUTH_ENABLED", true),
+    authProvider: process.env.AUTH_PROVIDER ?? "supabase",
+    authAllowedEmails: (process.env.AUTH_ALLOWED_EMAILS ?? "")
+        .split(",")
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean),
+    authRequireEmailVerification: boolFromEnv("AUTH_REQUIRE_EMAIL_VERIFICATION", true),
+    // "supabase" (production default) or "json" (development/migration fallback).
+    storageDriver: process.env.AURA_STORAGE_DRIVER ?? "supabase",
+    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY ?? ""
 };

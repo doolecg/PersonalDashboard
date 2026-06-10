@@ -1,3 +1,4 @@
+import { apiFetch } from "@/app/http";
 import { useSyncExternalStore } from "react";
 import type { SystemStatus } from "@/types/models";
 
@@ -19,7 +20,7 @@ function notify() {
 
 async function load() {
   try {
-    const response = await fetch("/api/system/status");
+    const response = await apiFetch("/api/system/status");
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     data = (await response.json()) as SystemStatus;
   } catch {

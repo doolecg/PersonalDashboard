@@ -13,9 +13,13 @@ export const DEFAULT_LAYOUT: DesktopLayout = {
   host: { x: 24, y: 24, w: 340, h: 300, visible: true },
   server: { x: 384, y: 24, w: 300, h: 190, visible: true },
   storage: { x: 384, y: 232, w: 300, h: 150, visible: true },
-  utilities: { x: 24, y: 344, w: 360, h: 230, visible: true },
+  utilities: { x: 24, y: 344, w: 360, h: 230, visible: false },
   calculator: { x: 704, y: 24, w: 260, h: 360, visible: false },
-  agent: { x: 700, y: 24, w: 380, h: 520, visible: true }
+  agent: { x: 700, y: 24, w: 380, h: 520, visible: true },
+  terminal: { x: 24, y: 344, w: 480, h: 320, visible: true },
+  logs: { x: 520, y: 400, w: 460, h: 260, visible: false },
+  system: { x: 1096, y: 24, w: 300, h: 380, visible: true },
+  core: { x: 1096, y: 420, w: 300, h: 280, visible: true }
 };
 
 function readStored(): DesktopLayout {

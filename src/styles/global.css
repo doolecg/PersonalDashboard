@@ -19,15 +19,84 @@ html {
   background: #000;
 }
 
+/* Aura retro sci-fi tokens — dim CRT phosphor palette. Shared by the login
+   gateway, the planner shell, the terminal, and the desktop system panels. */
+:root {
+  --aura-bg-main: #050706;
+  --aura-bg-radial: #07100d;
+  --aura-panel: rgba(13, 20, 15, 0.82);
+  --aura-panel-strong: rgba(18, 28, 21, 0.94);
+  --aura-panel-soft: rgba(8, 13, 10, 0.68);
+
+  --aura-text: #e7e2d2;
+  --aura-text-soft: #bdb7a3;
+  --aura-text-muted: #7f8776;
+  --aura-text-disabled: #4f574d;
+
+  --aura-green: #9dff9a;
+  --aura-green-soft: #6ee787;
+  --aura-amber: #ffb86b;
+  --aura-cyan: #73dceb;
+  --aura-red: #ff6b61;
+
+  --aura-border: rgba(157, 255, 154, 0.18);
+  --aura-border-strong: rgba(157, 255, 154, 0.32);
+  --aura-border-amber: rgba(255, 184, 107, 0.22);
+
+  --aura-glow-green: 0 0 24px rgba(157, 255, 154, 0.12);
+  --aura-glow-amber: 0 0 24px rgba(255, 184, 107, 0.1);
+  --aura-shadow-panel: 0 20px 70px rgba(0, 0, 0, 0.44);
+
+  --aura-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, monospace;
+
+  --aura-scanline-opacity: 0.055;
+}
+
 body {
   margin: 0;
   color: var(--ink);
   font-family: var(--rounded);
   letter-spacing: 0;
+  /* Dim CRT in a dark room: layered radial depth, no stars, no photos. */
   background:
-    radial-gradient(circle at 18% 12%, rgba(77, 163, 255, 0.22), transparent 28%),
-    radial-gradient(circle at 82% 78%, rgba(100, 199, 255, 0.1), transparent 30%),
-    linear-gradient(180deg, #02060c, #000 58%, #000);
+    radial-gradient(ellipse 130% 90% at 50% -15%, rgba(110, 231, 135, 0.07), transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 115%, rgba(115, 220, 235, 0.045), transparent 60%),
+    linear-gradient(180deg, var(--aura-bg-radial), var(--aura-bg-main) 58%, #030404);
+}
+
+/* Status LEDs — always paired with a text label, never colour alone. */
+.aura-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  display: inline-block;
+}
+.aura-led-green {
+  background: var(--aura-green);
+  box-shadow: 0 0 8px rgba(157, 255, 154, 0.6);
+}
+.aura-led-amber {
+  background: var(--aura-amber);
+  box-shadow: 0 0 8px rgba(255, 184, 107, 0.55);
+}
+.aura-led-red {
+  background: var(--aura-red);
+  box-shadow: 0 0 8px rgba(255, 107, 97, 0.55);
+}
+.aura-led-dim {
+  background: var(--aura-text-disabled);
+  box-shadow: none;
+}
+
+/* Small uppercase machine label, e.g. "SYS.CALENDAR". Use sparingly. */
+.sys-tag {
+  font-family: var(--aura-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--aura-text-muted);
 }
 
 button,
@@ -184,9 +253,9 @@ textarea {
 
 /* Shared dark glass used by settings, modals, and any portal-rendered overlay */
 .aura-modal-content {
-  background: linear-gradient(160deg, rgba(20, 23, 50, 0.98) 0%, rgba(10, 12, 30, 0.99) 100%) !important;
-  border-color: rgba(255, 255, 255, 0.14) !important;
-  box-shadow: 0 24px 60px rgba(4, 6, 20, 0.88), inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+  background: linear-gradient(160deg, rgba(18, 28, 21, 0.98) 0%, rgba(7, 12, 9, 0.99) 100%) !important;
+  border-color: var(--aura-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 5, 3, 0.88), inset 0 1px 0 rgba(157, 255, 154, 0.1) !important;
   color: #fff !important;
 }
 .aura-modal-content .text-foreground { color: #fff !important; }

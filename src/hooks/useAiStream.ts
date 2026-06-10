@@ -1,3 +1,4 @@
+import { apiFetch } from "@/app/http";
 import { useCallback, useRef, useState } from "react";
 import type { AiUsageSnapshot, AuraContext } from "../types/models";
 
@@ -17,7 +18,7 @@ export function useAiStream() {
     setIsStreaming(true);
     let nextAnswer = "";
     try {
-      const response = await fetch("/api/ai/stream", {
+      const response = await apiFetch("/api/ai/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, context }),
